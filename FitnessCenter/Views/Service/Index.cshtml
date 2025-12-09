@@ -1,0 +1,34 @@
+@model IEnumerable<Service>
+
+@{
+    ViewData["Title"] = "Services";
+}
+
+<h2 class="mb-4">Our Services</h2>
+
+<div class="row g-4">
+    @foreach (var service in Model)
+    {
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">@service.Name</h5>
+                    <p class="card-text">@service.Description</p>
+                    <ul class="list-unstyled">
+                        <li><strong>Type:</strong> @service.Type</li>
+                        <li><strong>Duration:</strong> @service.DurationMinutes minutes</li>
+                        <li><strong>Price:</strong> $@service.Price.ToString("F2")</li>
+                    </ul>
+                </div>
+                <div class="card-footer">
+                    <a asp-action="Details" asp-route-id="@service.Id" class="btn btn-primary">View Details</a>
+                    @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Member"))
+                    {
+                        <a asp-controller="Appointment" asp-action="Create" class="btn btn-success">Book Now</a>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+

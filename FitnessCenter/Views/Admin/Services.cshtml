@@ -1,0 +1,45 @@
+@model IEnumerable<Service>
+
+@{
+    ViewData["Title"] = "Manage Services";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Services</h2>
+    <a asp-action="CreateService" class="btn btn-primary">Create New Service</a>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Duration</th>
+                <th>Price</th>
+                <th>Fitness Center</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var service in Model)
+            {
+                <tr>
+                    <td>@service.Name</td>
+                    <td>@service.Type</td>
+                    <td>@service.DurationMinutes minutes</td>
+                    <td>$@service.Price.ToString("F2")</td>
+                    <td>@service.FitnessCenter.Name</td>
+                    <td>
+                        <a asp-action="EditService" asp-route-id="@service.Id" class="btn btn-sm btn-warning">Edit</a>
+                        <form asp-action="DeleteService" method="post" class="d-inline" onsubmit="return confirm('Are you sure?');">
+                            <input type="hidden" name="id" value="@service.Id" />
+                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+

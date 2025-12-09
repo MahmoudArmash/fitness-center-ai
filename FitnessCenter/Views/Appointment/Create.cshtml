@@ -1,0 +1,96 @@
+@model CreateAppointmentViewModel
+
+@{
+    ViewData["Title"] = "Book Appointment";
+}
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h3 class="card-title mb-0">Book New Appointment</h3>
+            </div>
+            <div class="card-body">
+                <form asp-action="Create" method="post" id="appointmentForm">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="ServiceId" class="form-label"></label>
+                        <select asp-for="ServiceId" class="form-select" id="serviceSelect">
+                            <option value="">-- Select Service --</option>
+                        </select>
+                        <span asp-validation-for="ServiceId" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="AppointmentDateTime" class="form-label"></label>
+                        <input asp-for="AppointmentDateTime" class="form-control" type="datetime-local" id="appointmentDateTime" />
+                        <span asp-validation-for="AppointmentDateTime" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="TrainerId" class="form-label"></label>
+                        <select asp-for="TrainerId" class="form-select" id="trainerSelect">
+                            <option value="">-- Select Service and Date First --</option>
+                        </select>
+                        <span asp-validation-for="TrainerId" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Notes" class="form-label"></label>
+                        <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
+                        <span asp-validation-for="Notes" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Book Appointment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        $(document).ready(function() {
+            // Load services
+            $.get('/api/api/services', function(services) {
+                var select = $('#serviceSelect');
+                services.forEach(function(service) {
+                    select.append($('<option></option>').val(service.id).text(service.name + ' - $' + service.price));
+                });
+            });
+
+            // Load available trainers when service and date are selected
+            $('#serviceSelect, #appointmentDateTime').on('change', function() {
+                var serviceId = $('#serviceSelect').val();
+                var dateTime = $('#appointmentDateTime').val();
+                
+                if (serviceId && dateTime) {
+                    var date = new Date(dateTime);
+                    var isoDate = date.toISOString();
+                    
+                    $.get('/Appointment/GetAvailableTrainers', {
+                        serviceId: serviceId,
+                        appointmentDateTime: isoDate
+                    }, function(trainers) {
+                        var select = $('#trainerSelect');
+                        select.empty();
+                        if (trainers.length === 0) {
+                            select.append($('<option></option>').val('').text('No trainers available at this time'));
+                        } else {
+                            select.append($('<option></option>').val('').text('-- Select Trainer --'));
+                            trainers.forEach(function(trainer) {
+                                select.append($('<option></option>').val(trainer.id).text(trainer.fullName));
+                            });
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+}
+

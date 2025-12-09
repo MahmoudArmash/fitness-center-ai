@@ -1,0 +1,40 @@
+@{
+    ViewData["Title"] = "Exercise Recommendations";
+}
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        @if (ViewBag.Success == true)
+        {
+            <div class="card shadow mb-4">
+                <div class="card-header bg-success text-white">
+                    <h3 class="card-title mb-0">Analysis Complete</h3>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(ViewBag.PhotoPath))
+                    {
+                        <div class="text-center mb-4">
+                            <img src="@ViewBag.PhotoPath" alt="Uploaded Photo" class="img-fluid rounded" style="max-height: 400px;" />
+                        </div>
+                    }
+                    <h4>Personalized Recommendations</h4>
+                    <div class="recommendations">
+                        @Html.Raw(ViewBag.Recommendations?.Replace("\n", "<br/>"))
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-danger">
+                <h4>Error</h4>
+                <p>Unable to generate recommendations. Please try again.</p>
+            </div>
+        }
+
+        <div class="text-center">
+            <a asp-action="Index" class="btn btn-primary">Analyze Another Photo</a>
+        </div>
+    </div>
+</div>
+

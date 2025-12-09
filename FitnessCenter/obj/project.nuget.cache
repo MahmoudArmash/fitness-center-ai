@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "kl0Ay2GHJsY=",
+  "dgSpecHash": "YwD+KpSnSAk=",
   "success": true,
   "projectFilePath": "C:\\Users\\90538\\Documents\\Progarmming_Projects\\fitness-center-ai\\FitnessCenter\\FitnessCenter.csproj",
   "expectedPackageFiles": [
@@ -9,7 +9,6 @@
     "C:\\Users\\90538\\.nuget\\packages\\microsoft.aspnetcore.cryptography.internal\\9.0.0\\microsoft.aspnetcore.cryptography.internal.9.0.0.nupkg.sha512",
     "C:\\Users\\90538\\.nuget\\packages\\microsoft.aspnetcore.cryptography.keyderivation\\9.0.0\\microsoft.aspnetcore.cryptography.keyderivation.9.0.0.nupkg.sha512",
     "C:\\Users\\90538\\.nuget\\packages\\microsoft.aspnetcore.identity.entityframeworkcore\\9.0.0\\microsoft.aspnetcore.identity.entityframeworkcore.9.0.0.nupkg.sha512",
-    "C:\\Users\\90538\\.nuget\\packages\\microsoft.aspnetcore.identity.ui\\10.0.1\\microsoft.aspnetcore.identity.ui.10.0.1.nupkg.sha512",
     "C:\\Users\\90538\\.nuget\\packages\\microsoft.bcl.asyncinterfaces\\1.1.1\\microsoft.bcl.asyncinterfaces.1.1.1.nupkg.sha512",
     "C:\\Users\\90538\\.nuget\\packages\\microsoft.csharp\\4.5.0\\microsoft.csharp.4.5.0.nupkg.sha512",
     "C:\\Users\\90538\\.nuget\\packages\\microsoft.data.sqlclient\\5.1.6\\microsoft.data.sqlclient.5.1.6.nupkg.sha512",

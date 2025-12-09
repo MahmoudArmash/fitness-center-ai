@@ -1,0 +1,59 @@
+@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<h2 class="mb-4">Admin Dashboard</h2>
+
+<div class="row g-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title">Total Members</h5>
+                <h2 class="mb-0">@ViewBag.TotalMembers</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title">Total Trainers</h5>
+                <h2 class="mb-0">@ViewBag.TotalTrainers</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <h5 class="card-title">Total Appointments</h5>
+                <h2 class="mb-0">@ViewBag.TotalAppointments</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <h5 class="card-title">Pending Appointments</h5>
+                <h2 class="mb-0">@ViewBag.PendingAppointments</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header bg-dark text-white">
+                <h5 class="card-title mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2 d-md-flex">
+                    <a asp-action="FitnessCenters" class="btn btn-primary">Manage Fitness Centers</a>
+                    <a asp-action="Services" class="btn btn-success">Manage Services</a>
+                    <a asp-action="Trainers" class="btn btn-info">Manage Trainers</a>
+                    <a asp-controller="Appointment" asp-action="Index" class="btn btn-warning">View Appointments</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

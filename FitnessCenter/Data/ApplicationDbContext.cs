@@ -11,7 +11,7 @@ namespace FitnessCenter.Data
         {
         }
 
-        public DbSet<FitnessCenter> FitnessCenters { get; set; }
+        public DbSet<Models.FitnessCenter> FitnessCenters { get; set; }
         public DbSet<Trainer> Trainers { get; set; }
         public DbSet<Service> Services { get; set; }
         public DbSet<Appointment> Appointments { get; set; }

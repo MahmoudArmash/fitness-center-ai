@@ -51,7 +51,7 @@ namespace FitnessCenter.Data
             // Seed initial data if database is empty
             if (!context.FitnessCenters.Any())
             {
-                var fitnessCenter = new FitnessCenter
+                var fitnessCenter = new Models.FitnessCenter
                 {
                     Name = "Sakarya Fitness Center",
                     Address = "Sakarya University Campus, Serdivan, Sakarya",

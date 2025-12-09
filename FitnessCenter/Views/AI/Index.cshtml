@@ -1,0 +1,33 @@
+@{
+    ViewData["Title"] = "AI Exercise Recommendations";
+}
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h3 class="card-title mb-0">AI-Powered Exercise Recommendations</h3>
+            </div>
+            <div class="card-body">
+                <p class="lead">Upload a photo and get personalized exercise recommendations based on AI analysis.</p>
+                
+                <form asp-action="AnalyzePhoto" method="post" enctype="multipart/form-data">
+                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                    <div class="mb-3">
+                        <label for="photo" class="form-label">Upload Photo</label>
+                        <input type="file" name="photo" class="form-control" accept="image/*" required />
+                        <div class="form-text">Supported formats: JPG, PNG, GIF (Max 10MB)</div>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-info btn-lg">
+                            <i class="bi bi-cloud-upload"></i> Analyze Photo
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+

@@ -1,0 +1,44 @@
+@using FitnessCenter.Models
+@model IEnumerable<FitnessCenter>
+
+@{
+    ViewData["Title"] = "Manage Fitness Centers";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Fitness Centers</h2>
+    <a asp-action="CreateFitnessCenter" class="btn btn-primary">Create New Fitness Center</a>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Name</th>
+                <th>Address</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var center in Model)
+            {
+                <tr>
+                    <td>@center.Name</td>
+                    <td>@center.Address</td>
+                    <td>@center.Phone</td>
+                    <td>@center.Email</td>
+                    <td>
+                        <a asp-action="EditFitnessCenter" asp-route-id="@center.Id" class="btn btn-sm btn-warning">Edit</a>
+                        <form asp-action="DeleteFitnessCenter" method="post" class="d-inline" onsubmit="return confirm('Are you sure?');">
+                            <input type="hidden" name="id" value="@center.Id" />
+                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+

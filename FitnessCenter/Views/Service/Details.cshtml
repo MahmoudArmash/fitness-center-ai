@@ -1,0 +1,58 @@
+@model Service
+
+@{
+    ViewData["Title"] = "Service Details";
+}
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h3 class="card-title mb-0">@Model.Name</h3>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-3">Type:</dt>
+                    <dd class="col-sm-9">@Model.Type</dd>
+
+                    <dt class="col-sm-3">Description:</dt>
+                    <dd class="col-sm-9">@Model.Description</dd>
+
+                    <dt class="col-sm-3">Duration:</dt>
+                    <dd class="col-sm-9">@Model.DurationMinutes minutes</dd>
+
+                    <dt class="col-sm-3">Price:</dt>
+                    <dd class="col-sm-9">$@Model.Price.ToString("F2")</dd>
+
+                    <dt class="col-sm-3">Fitness Center:</dt>
+                    <dd class="col-sm-9">@Model.FitnessCenter.Name</dd>
+                </dl>
+
+                @if (Model.TrainerExpertises.Any())
+                {
+                    <h5 class="mt-4">Available Trainers</h5>
+                    <ul class="list-group">
+                        @foreach (var expertise in Model.TrainerExpertises)
+                        {
+                            <li class="list-group-item">
+                                <strong>@expertise.Trainer.FullName</strong>
+                                @if (!string.IsNullOrEmpty(expertise.Trainer.Bio))
+                                {
+                                    <br /><small class="text-muted">@expertise.Trainer.Bio</small>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+            <div class="card-footer">
+                <a asp-action="Index" class="btn btn-secondary">Back to Services</a>
+                @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Member"))
+                {
+                    <a asp-controller="Appointment" asp-action="Create" class="btn btn-primary">Book Appointment</a>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
