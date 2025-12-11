@@ -4,13 +4,13 @@
       <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\css\site.css'))</AssetFile>
       <Selectors><![CDATA[[]]]></Selectors>
       <EndpointProperties><![CDATA[[{"Name":"integrity","Value":"sha256-K80teVS2lelm6Oevwl6g4FIUyy/vhqisBnPtTNeKvfE="}]]]></EndpointProperties>
-      <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"no-cache"},{"Name":"Content-Length","Value":"2369"},{"Name":"Content-Type","Value":"text/css"},{"Name":"ETag","Value":"\u0022K80teVS2lelm6Oevwl6g4FIUyy/vhqisBnPtTNeKvfE=\u0022"},{"Name":"Last-Modified","Value":"Tue, 09 Dec 2025 22:34:13 GMT"}]]]></ResponseHeaders>
+      <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"no-cache"},{"Name":"Content-Length","Value":"2369"},{"Name":"Content-Type","Value":"text/css"},{"Name":"ETag","Value":"\u0022K80teVS2lelm6Oevwl6g4FIUyy/vhqisBnPtTNeKvfE=\u0022"},{"Name":"Last-Modified","Value":"Tue, 09 Dec 2025 22:36:19 GMT"}]]]></ResponseHeaders>
     </StaticWebAssetEndpoint>
     <StaticWebAssetEndpoint Include="_content/FitnessCenter/css/site.f7qutoxx6d.css">
       <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\css\site.css'))</AssetFile>
       <Selectors><![CDATA[[]]]></Selectors>
       <EndpointProperties><![CDATA[[{"Name":"fingerprint","Value":"f7qutoxx6d"},{"Name":"integrity","Value":"sha256-K80teVS2lelm6Oevwl6g4FIUyy/vhqisBnPtTNeKvfE="},{"Name":"label","Value":"_content/FitnessCenter/css/site.css"}]]]></EndpointProperties>
-      <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"max-age=31536000, immutable"},{"Name":"Content-Length","Value":"2369"},{"Name":"Content-Type","Value":"text/css"},{"Name":"ETag","Value":"\u0022K80teVS2lelm6Oevwl6g4FIUyy/vhqisBnPtTNeKvfE=\u0022"},{"Name":"Last-Modified","Value":"Tue, 09 Dec 2025 22:34:13 GMT"}]]]></ResponseHeaders>
+      <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"max-age=31536000, immutable"},{"Name":"Content-Length","Value":"2369"},{"Name":"Content-Type","Value":"text/css"},{"Name":"ETag","Value":"\u0022K80teVS2lelm6Oevwl6g4FIUyy/vhqisBnPtTNeKvfE=\u0022"},{"Name":"Last-Modified","Value":"Tue, 09 Dec 2025 22:36:19 GMT"}]]]></ResponseHeaders>
     </StaticWebAssetEndpoint>
     <StaticWebAssetEndpoint Include="_content/FitnessCenter/favicon.61n19gt1b8.ico">
       <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\favicon.ico'))</AssetFile>
