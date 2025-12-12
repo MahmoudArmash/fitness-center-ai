@@ -26,25 +26,31 @@ namespace FitnessCenter.Data
                 }
             }
 
-            // Create admin user
-            const string adminEmail = "ogrencinumarasi@sakarya.edu.tr";
-            const string adminPassword = "sau";
-
-            if (await userManager.FindByEmailAsync(adminEmail) == null)
+            // Create admin users
+            var adminUsers = new[]
             {
-                var admin = new Member
-                {
-                    UserName = adminEmail,
-                    Email = adminEmail,
-                    EmailConfirmed = true,
-                    FirstName = "Admin",
-                    LastName = "User"
-                };
+                new { Email = "ogrencinumarasi@sakarya.edu.tr", Password = "sau", FirstName = "Admin", LastName = "User" },
+                new { Email = "g201210589@sakarya.edu.tr", Password = "sau", FirstName = "Admin", LastName = "User" }
+            };
 
-                var result = await userManager.CreateAsync(admin, adminPassword);
-                if (result.Succeeded)
+            foreach (var adminUser in adminUsers)
+            {
+                if (await userManager.FindByEmailAsync(adminUser.Email) == null)
                 {
-                    await userManager.AddToRoleAsync(admin, "Admin");
+                    var admin = new Member
+                    {
+                        UserName = adminUser.Email,
+                        Email = adminUser.Email,
+                        EmailConfirmed = true,
+                        FirstName = adminUser.FirstName,
+                        LastName = adminUser.LastName
+                    };
+
+                    var result = await userManager.CreateAsync(admin, adminUser.Password);
+                    if (result.Succeeded)
+                    {
+                        await userManager.AddToRoleAsync(admin, "Admin");
+                    }
                 }
             }
 

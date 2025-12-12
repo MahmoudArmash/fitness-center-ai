@@ -9,23 +9,80 @@
                 <h3 class="card-title mb-0">AI-Powered Exercise Recommendations</h3>
             </div>
             <div class="card-body">
-                <p class="lead">Upload a photo and get personalized exercise recommendations based on AI analysis.</p>
+                <p class="lead">Upload a photo and get personalized exercise recommendations based on AI analysis. You can optionally provide body metrics for more accurate recommendations.</p>
                 
                 <form asp-action="AnalyzePhoto" method="post" enctype="multipart/form-data">
                     <div asp-validation-summary="All" class="text-danger mb-3"></div>
 
                     <div class="mb-3">
-                        <label for="photo" class="form-label">Upload Photo</label>
+                        <label for="photo" class="form-label">Upload Photo <span class="text-danger">*</span></label>
                         <input type="file" name="photo" class="form-control" accept="image/*" required />
                         <div class="form-text">Supported formats: JPG, PNG, GIF (Max 10MB)</div>
                     </div>
 
+                    <div class="card bg-light mb-3">
+                        <div class="card-header">
+                            <h5 class="mb-0">Optional: Body Metrics (for more personalized recommendations)</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="useProfileMetrics" id="useProfileMetrics" value="true" checked />
+                                    <input type="hidden" name="useProfileMetrics" value="false" />
+                                    <label class="form-check-label" for="useProfileMetrics">
+                                        Use my profile information (if available)
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="height" class="form-label">Height (cm)</label>
+                                    <input type="number" name="height" id="height" class="form-control" step="0.1" min="0" value="@ViewBag.UserHeight" />
+                                    <div class="form-text">Your profile: @(ViewBag.UserHeight != null ? ViewBag.UserHeight + " cm" : "Not set")</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="weight" class="form-label">Weight (kg)</label>
+                                    <input type="number" name="weight" id="weight" class="form-control" step="0.1" min="0" value="@ViewBag.UserWeight" />
+                                    <div class="form-text">Your profile: @(ViewBag.UserWeight != null ? ViewBag.UserWeight + " kg" : "Not set")</div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="gender" class="form-label">Gender</label>
+                                    <select name="gender" id="gender" class="form-select">
+                                        <option value="">Select...</option>
+                                        <option value="Male" selected="@(ViewBag.UserGender == "Male")">Male</option>
+                                        <option value="Female" selected="@(ViewBag.UserGender == "Female")">Female</option>
+                                        <option value="Other" selected="@(ViewBag.UserGender == "Other")">Other</option>
+                                    </select>
+                                    <div class="form-text">Your profile: @(ViewBag.UserGender ?? "Not set")</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="dateOfBirth" class="form-label">Date of Birth</label>
+                                    <input type="date" name="dateOfBirth" id="dateOfBirth" class="form-control" value="@(ViewBag.UserDateOfBirth?.ToString("yyyy-MM-dd"))" />
+                                    <div class="form-text">Your profile: @(ViewBag.UserDateOfBirth?.ToString("MM/dd/yyyy") ?? "Not set")</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="d-grid">
                         <button type="submit" class="btn btn-info btn-lg">
-                            <i class="bi bi-cloud-upload"></i> Analyze Photo
+                            <i class="bi bi-cloud-upload"></i> Analyze Photo with AI
                         </button>
                     </div>
                 </form>
+
+                <hr class="my-4" />
+
+                <div class="text-center">
+                    <p>Looking for diet and nutrition recommendations instead?</p>
+                    <a asp-action="DietPlan" class="btn btn-outline-success">
+                        <i class="bi bi-apple"></i> Get Diet Plan Recommendations
+                    </a>
+                </div>
             </div>
         </div>
     </div>

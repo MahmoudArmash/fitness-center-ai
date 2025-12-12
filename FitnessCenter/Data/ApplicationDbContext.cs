@@ -22,6 +22,15 @@ namespace FitnessCenter.Data
         {
             base.OnModelCreating(builder);
 
+            // Configure decimal precision for Member properties
+            builder.Entity<Member>()
+                .Property(m => m.Height)
+                .HasPrecision(5, 2);
+
+            builder.Entity<Member>()
+                .Property(m => m.Weight)
+                .HasPrecision(5, 2);
+
             // Configure TrainerExpertise as a many-to-many relationship
             builder.Entity<TrainerExpertise>()
                 .HasKey(te => new { te.TrainerId, te.ServiceId });

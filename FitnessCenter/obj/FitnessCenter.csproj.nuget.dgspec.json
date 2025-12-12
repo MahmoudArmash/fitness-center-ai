@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\90538\\Documents\\Progarmming_Projects\\fitness-center-ai\\FitnessCenter\\FitnessCenter.csproj": {}
+    "C:\\Users\\mo3ta\\Documents\\CsharpFund\\fitness-center-ai\\FitnessCenter\\FitnessCenter.csproj": {}
   },
   "projects": {
-    "C:\\Users\\90538\\Documents\\Progarmming_Projects\\fitness-center-ai\\FitnessCenter\\FitnessCenter.csproj": {
+    "C:\\Users\\mo3ta\\Documents\\CsharpFund\\fitness-center-ai\\FitnessCenter\\FitnessCenter.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\90538\\Documents\\Progarmming_Projects\\fitness-center-ai\\FitnessCenter\\FitnessCenter.csproj",
+        "projectUniqueName": "C:\\Users\\mo3ta\\Documents\\CsharpFund\\fitness-center-ai\\FitnessCenter\\FitnessCenter.csproj",
         "projectName": "FitnessCenter",
-        "projectPath": "C:\\Users\\90538\\Documents\\Progarmming_Projects\\fitness-center-ai\\FitnessCenter\\FitnessCenter.csproj",
-        "packagesPath": "C:\\Users\\90538\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\90538\\Documents\\Progarmming_Projects\\fitness-center-ai\\FitnessCenter\\obj\\",
+        "projectPath": "C:\\Users\\mo3ta\\Documents\\CsharpFund\\fitness-center-ai\\FitnessCenter\\FitnessCenter.csproj",
+        "packagesPath": "C:\\Users\\mo3ta\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\mo3ta\\Documents\\CsharpFund\\fitness-center-ai\\FitnessCenter\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\90538\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\mo3ta\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -42,9 +42,9 @@
         "restoreAuditProperties": {
           "enableAudit": "true",
           "auditLevel": "low",
-          "auditMode": "all"
+          "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.100"
+        "SdkAnalysisLevel": "9.0.300"
       },
       "frameworks": {
         "net9.0": {
@@ -54,7 +54,7 @@
               "target": "Package",
               "version": "[9.0.0, )"
             },
-            "Microsoft.EntityFrameworkCore.SqlServer": {
+            "Microsoft.EntityFrameworkCore.Sqlite": {
               "target": "Package",
               "version": "[9.0.0, )"
             },
@@ -84,7 +84,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.100/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

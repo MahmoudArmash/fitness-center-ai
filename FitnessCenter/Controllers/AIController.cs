@@ -31,14 +31,22 @@ namespace FitnessCenter.Controllers
             _environment = environment;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
+            var user = await _userManager.GetUserAsync(User);
+            if (user != null)
+            {
+                ViewBag.UserHeight = user.Height;
+                ViewBag.UserWeight = user.Weight;
+                ViewBag.UserGender = user.Gender;
+                ViewBag.UserDateOfBirth = user.DateOfBirth;
+            }
             return View();
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AnalyzePhoto(IFormFile photo)
+        public async Task<IActionResult> AnalyzePhoto(IFormFile photo, decimal? height, decimal? weight, string? gender, DateTime? dateOfBirth, bool useProfileMetrics = true)
         {
             if (photo == null || photo.Length == 0)
             {
@@ -67,6 +75,20 @@ namespace FitnessCenter.Controllers
                 var user = await _userManager.GetUserAsync(User);
                 if (user == null) return NotFound();
 
+                // Get body metrics - use form input if provided, otherwise use profile data
+                decimal? finalHeight = height;
+                decimal? finalWeight = weight;
+                string? finalGender = gender;
+                DateTime? finalDateOfBirth = dateOfBirth;
+
+                if (useProfileMetrics)
+                {
+                    finalHeight ??= user.Height;
+                    finalWeight ??= user.Weight;
+                    finalGender ??= user.Gender;
+                    finalDateOfBirth ??= user.DateOfBirth;
+                }
+
                 // Save photo
                 var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", "ai-photos");
                 if (!Directory.Exists(uploadsFolder))
@@ -82,10 +104,20 @@ namespace FitnessCenter.Controllers
                     await photo.CopyToAsync(fileStream);
                 }
 
-                // Analyze photo with AI
+                // Analyze photo with AI (with or without body metrics)
                 using (var photoStream = new FileStream(filePath, FileMode.Open))
                 {
-                    var recommendations = await _aiService.AnalyzePhotoAndGetRecommendationsAsync(photoStream, photo.FileName);
+                    string recommendations;
+                    
+                    if (finalHeight.HasValue || finalWeight.HasValue || !string.IsNullOrEmpty(finalGender) || finalDateOfBirth.HasValue)
+                    {
+                        recommendations = await _aiService.AnalyzePhotoWithBodyMetricsAsync(
+                            photoStream, photo.FileName, finalHeight, finalWeight, finalGender, finalDateOfBirth);
+                    }
+                    else
+                    {
+                        recommendations = await _aiService.AnalyzePhotoAndGetRecommendationsAsync(photoStream, photo.FileName);
+                    }
 
                     ViewBag.PhotoPath = $"/uploads/ai-photos/{uniqueFileName}";
                     ViewBag.Recommendations = recommendations;
@@ -102,7 +134,80 @@ namespace FitnessCenter.Controllers
             }
         }
 
+        [HttpGet]
+        public async Task<IActionResult> DietPlan()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user != null)
+            {
+                ViewBag.UserHeight = user.Height;
+                ViewBag.UserWeight = user.Weight;
+                ViewBag.UserGender = user.Gender;
+                ViewBag.UserDateOfBirth = user.DateOfBirth;
+            }
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> GetDietPlan(decimal? height, decimal? weight, string? gender, DateTime? dateOfBirth, string? fitnessGoal, bool useProfileMetrics = true)
+        {
+            try
+            {
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null) return NotFound();
+
+                // Get body metrics - use form input if provided, otherwise use profile data
+                decimal? finalHeight = height;
+                decimal? finalWeight = weight;
+                string? finalGender = gender;
+                DateTime? finalDateOfBirth = dateOfBirth;
+
+                if (useProfileMetrics)
+                {
+                    finalHeight ??= user.Height;
+                    finalWeight ??= user.Weight;
+                    finalGender ??= user.Gender;
+                    finalDateOfBirth ??= user.DateOfBirth;
+                }
+
+                if (!finalHeight.HasValue || !finalWeight.HasValue)
+                {
+                    ModelState.AddModelError("", "Height and weight are required for diet plan recommendations.");
+                    ViewBag.UserHeight = finalHeight;
+                    ViewBag.UserWeight = finalWeight;
+                    ViewBag.UserGender = finalGender;
+                    ViewBag.UserDateOfBirth = finalDateOfBirth;
+                    ViewBag.FitnessGoal = fitnessGoal;
+                    return View("DietPlan");
+                }
+
+                var dietPlan = await _aiService.GetDietPlanRecommendationsAsync(
+                    finalHeight, finalWeight, finalGender, finalDateOfBirth, fitnessGoal);
+
+                ViewBag.DietPlan = dietPlan;
+                ViewBag.Success = true;
+                ViewBag.Height = finalHeight;
+                ViewBag.Weight = finalWeight;
+                ViewBag.Gender = finalGender;
+                ViewBag.FitnessGoal = fitnessGoal;
+
+                return View("DietPlanRecommendations");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating diet plan");
+                ModelState.AddModelError("", "An error occurred while generating the diet plan. Please try again.");
+                return View("DietPlan");
+            }
+        }
+
         public IActionResult Recommendations()
+        {
+            return View();
+        }
+
+        public IActionResult DietPlanRecommendations()
         {
             return View();
         }
