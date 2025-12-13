@@ -26,8 +26,9 @@ A comprehensive ASP.NET Core MVC application for managing a fitness center with 
   - Body metrics tracking
 
 - **AI Integration**
-  - Photo-based exercise recommendations using OpenAI API
-  - Personalized fitness plans
+  - Photo-based exercise recommendations using Google Gemini AI
+  - Personalized fitness plans with body metrics integration
+  - Diet and nutrition plan recommendations
 
 - **REST API**
   - `/api/api/trainers` - List all trainers
@@ -39,16 +40,15 @@ A comprehensive ASP.NET Core MVC application for managing a fitness center with 
 ## Technology Stack
 
 - **Framework**: ASP.NET Core MVC 9.0
-- **Database**: SQL Server with Entity Framework Core
+- **Database**: SQLite with Entity Framework Core
 - **Authentication**: ASP.NET Core Identity
 - **Frontend**: Bootstrap 5, jQuery, jQuery Validation
-- **AI**: OpenAI API (GPT-4 Vision)
+- **AI**: Google Gemini AI (Gemini 1.5 Flash)
 
 ## Prerequisites
 
 - .NET 9.0 SDK
-- SQL Server (LocalDB or full SQL Server instance)
-- OpenAI API Key (for AI features)
+- Google Gemini API Key (for AI features) - Get from [Google AI Studio](https://makersuite.google.com/app/apikey)
 
 ## Setup Instructions
 
@@ -60,11 +60,12 @@ A comprehensive ASP.NET Core MVC application for managing a fitness center with 
 
 2. **Configure the connection string**
    - Open `appsettings.json`
-   - Update the `DefaultConnection` string if needed (default uses LocalDB)
+   - Update the `DefaultConnection` string if needed (default uses SQLite: `Data Source=FitnessCenter.db`)
 
-3. **Configure OpenAI API Key**
+3. **Configure Google Gemini API Key**
    - Open `appsettings.json`
-   - Replace `your-openai-api-key-here` with your actual OpenAI API key
+   - Replace `your-gemini-api-key-here` in `GoogleGemini:ApiKey` with your actual Google Gemini API key
+   - Get your API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
 
 4. **Restore packages and build**
    ```bash
@@ -91,7 +92,7 @@ A comprehensive ASP.NET Core MVC application for managing a fitness center with 
 
 ## Default Admin Credentials
 
-- **Email**: `ogrencinumarasi@sakarya.edu.tr`
+- **Email**: `ogrencinumarasi@sakarya.edu.tr` / `g201210589@sakarya.edu.tr`
 - **Password**: `sau`
 
 ## Project Structure
@@ -177,12 +178,25 @@ Returns list of all services.
 - XSS protection
 - Secure file upload for photos
 
+## AI Features
+
+### Exercise Recommendations
+- Upload a photo and get personalized exercise recommendations
+- Optionally provide body metrics (height, weight, gender, age) for more accurate recommendations
+- Access via: `/AI` (Members only)
+
+### Diet Plan Recommendations
+- Get personalized diet and nutrition plans based on body metrics
+- Specify fitness goals (weight loss, muscle building, etc.)
+- Access via: `/AI/DietPlan` (Members only)
+
 ## Notes
 
-- The application uses LocalDB by default. For production, update the connection string.
-- OpenAI API key must be configured for AI features to work.
+- The application uses SQLite by default (`FitnessCenter.db` file). For production, consider using SQL Server or PostgreSQL.
+- Google Gemini API key must be configured for AI features to work.
 - Email service is currently a placeholder - implement actual email sending for production use.
-- Photo uploads are stored in `wwwroot/uploads/` directory.
+- Photo uploads are stored in `wwwroot/uploads/ai-photos/` directory.
+- Password requirements: Minimum 6 characters, at least one digit, one uppercase, and one lowercase letter.
 
 ## License
 
