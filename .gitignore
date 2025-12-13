@@ -1,0 +1,47 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.dll
+*.exe
+*.pdb
+
+## Visual Studio
+.vs/
+*.vsidx
+*.vspscc
+
+## Rider
+.idea/
+
+## VS Code
+.vscode/
+
+## Database
+*.db
+*.db-shm
+*.db-wal
+*.mdf
+*.ldf
+
+## Logs
+logs/
+*.log
+
+## OS
+.DS_Store
+Thumbs.db
+
+## Cursor Plans
+.cursor/plans/
+*.plan.md
+
+## User secrets
+appsettings.Development.json
+appsettings.Production.json
+
+## Uploads
+wwwroot/uploads/
+
