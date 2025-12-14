@@ -31,9 +31,12 @@
                     <td>@center.Email</td>
                     <td>
                         <a asp-action="EditFitnessCenter" asp-route-id="@center.Id" class="btn btn-sm btn-warning">Edit</a>
-                        <form asp-action="DeleteFitnessCenter" method="post" class="d-inline" onsubmit="return confirm('Are you sure?');">
+                        <form id="deleteForm_@center.Id" asp-action="DeleteFitnessCenter" method="post" class="d-inline">
                             <input type="hidden" name="id" value="@center.Id" />
-                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                            <button type="button" class="btn btn-sm btn-danger" 
+                                    onclick="showDeleteModal('deleteForm_@center.Id', '@Url.Action("DeleteFitnessCenter", "Admin")', 'Are you sure you want to delete this fitness center?', '@center.Name')">
+                                Delete
+                            </button>
                         </form>
                     </td>
                 </tr>
