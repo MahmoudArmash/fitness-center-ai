@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace FitnessCenter.Controllers
 {
@@ -19,13 +20,107 @@ namespace FitnessCenter.Controllers
             _logger = logger;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            ViewBag.TotalMembers = _context.Users.Count();
-            ViewBag.TotalTrainers = _context.Trainers.Count();
-            ViewBag.TotalAppointments = _context.Appointments.Count();
-            ViewBag.PendingAppointments = _context.Appointments.Count(a => a.Status == AppointmentStatus.Pending);
-            ViewBag.TotalServices = _context.Services.Count();
+            // Use LINQ aggregations for statistics
+            var appointments = await _context.Appointments.ToListAsync();
+            var services = await _context.Services.ToListAsync();
+            var trainers = await _context.Trainers.ToListAsync();
+            var members = await _context.Users.ToListAsync();
+
+            // Basic counts using LINQ
+            ViewBag.TotalMembers = members.Count();
+            ViewBag.TotalTrainers = trainers.Count();
+            ViewBag.TotalAppointments = appointments.Count();
+            ViewBag.PendingAppointments = appointments.Count(a => a.Status == AppointmentStatus.Pending);
+            ViewBag.TotalServices = services.Count();
+
+            // Advanced LINQ aggregations
+            ViewBag.Statistics = new
+            {
+                // Appointment statistics using LINQ
+                AppointmentStats = new
+                {
+                    Completed = appointments.Count(a => a.Status == AppointmentStatus.Completed),
+                    Confirmed = appointments.Count(a => a.Status == AppointmentStatus.Confirmed),
+                    Cancelled = appointments.Count(a => a.Status == AppointmentStatus.Cancelled),
+                    TotalRevenue = appointments
+                        .Where(a => a.Status == AppointmentStatus.Completed)
+                        .Sum(a => a.Price),
+                    AverageAppointmentPrice = appointments.Any() 
+                        ? appointments.Average(a => a.Price) 
+                        : 0,
+                    AppointmentsByMonth = appointments
+                        .GroupBy(a => new { a.AppointmentDateTime.Year, a.AppointmentDateTime.Month })
+                        .Select(g => new { 
+                            Year = g.Key.Year, 
+                            Month = g.Key.Month, 
+                            Count = g.Count(),
+                            Revenue = g.Where(a => a.Status == AppointmentStatus.Completed).Sum(a => a.Price)
+                        })
+                        .OrderByDescending(x => x.Year)
+                        .ThenByDescending(x => x.Month)
+                        .Take(6)
+                        .ToList()
+                },
+                // Service statistics using LINQ
+                ServiceStats = new
+                {
+                    AveragePrice = services.Any() ? services.Average(s => s.Price) : 0,
+                    ServicesByType = services
+                        .GroupBy(s => s.Type)
+                        .Select(g => new { Type = g.Key, Count = g.Count() })
+                        .OrderByDescending(x => x.Count)
+                        .ToList(),
+                    MostPopularService = appointments
+                        .GroupBy(a => a.ServiceId)
+                        .Select(g => new { 
+                            ServiceId = g.Key, 
+                            Count = g.Count(),
+                            ServiceName = services.FirstOrDefault(s => s.Id == g.Key)?.Name ?? "Unknown"
+                        })
+                        .OrderByDescending(x => x.Count)
+                        .FirstOrDefault()
+                },
+                // Trainer statistics using LINQ
+                TrainerStats = new
+                {
+                    TrainersByFitnessCenter = trainers
+                        .GroupBy(t => t.FitnessCenterId)
+                        .Select(g => new { 
+                            FitnessCenterId = g.Key, 
+                            Count = g.Count() 
+                        })
+                        .ToList(),
+                    MostBookedTrainer = appointments
+                        .GroupBy(a => a.TrainerId)
+                        .Select(g => new { 
+                            TrainerId = g.Key, 
+                            Count = g.Count(),
+                            TrainerName = trainers.FirstOrDefault(t => t.Id == g.Key)?.FullName ?? "Unknown"
+                        })
+                        .OrderByDescending(x => x.Count)
+                        .FirstOrDefault()
+                },
+                // Member statistics using LINQ
+                MemberStats = new
+                {
+                    MembersWithAppointments = members
+                        .Where(m => appointments.Any(a => a.MemberId == m.Id))
+                        .Count(),
+                    TopMembers = appointments
+                        .GroupBy(a => a.MemberId)
+                        .Select(g => new { 
+                            MemberId = g.Key, 
+                            AppointmentCount = g.Count(),
+                            TotalSpent = g.Where(a => a.Status == AppointmentStatus.Completed).Sum(a => a.Price),
+                            MemberName = members.FirstOrDefault(m => m.Id == g.Key)?.FullName ?? "Unknown"
+                        })
+                        .OrderByDescending(x => x.AppointmentCount)
+                        .Take(5)
+                        .ToList()
+                }
+            };
 
             return View();
         }

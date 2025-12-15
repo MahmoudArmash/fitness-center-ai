@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace FitnessCenter.Controllers
 {
@@ -32,6 +33,7 @@ namespace FitnessCenter.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return NotFound();
 
+            // Get recent appointments using LINQ
             var appointments = await _context.Appointments
                 .Where(a => a.MemberId == user.Id)
                 .Include(a => a.Trainer)
@@ -40,7 +42,57 @@ namespace FitnessCenter.Controllers
                 .Take(5)
                 .ToListAsync();
 
+            // Get member statistics using LINQ aggregations
+            var allAppointments = await _context.Appointments
+                .Where(a => a.MemberId == user.Id)
+                .Include(a => a.Service)
+                .Include(a => a.Trainer)
+                .ToListAsync();
+
+            // Load related data for LINQ to Objects operations
+            var services = await _context.Services.ToListAsync();
+            var trainers = await _context.Trainers.ToListAsync();
+
             ViewBag.RecentAppointments = appointments;
+            ViewBag.MemberStatistics = new
+            {
+                TotalAppointments = allAppointments.Count,
+                CompletedAppointments = allAppointments.Count(a => a.Status == AppointmentStatus.Completed),
+                UpcomingAppointments = allAppointments.Count(a => a.AppointmentDateTime >= DateTime.Now && 
+                                                                  a.Status != AppointmentStatus.Cancelled),
+                TotalSpent = allAppointments
+                    .Where(a => a.Status == AppointmentStatus.Completed)
+                    .Sum(a => a.Price),
+                // Group appointments by service using LINQ to Objects
+                AppointmentsByService = allAppointments
+                    .GroupBy(a => a.ServiceId)
+                    .Select(g => new 
+                    { 
+                        ServiceId = g.Key, 
+                        Count = g.Count(),
+                        ServiceName = services.FirstOrDefault(s => s.Id == g.Key)?.Name ?? "Unknown"
+                    })
+                    .OrderByDescending(x => x.Count)
+                    .Take(5)
+                    .ToList(),
+                // Group appointments by status using LINQ
+                AppointmentsByStatus = allAppointments
+                    .GroupBy(a => a.Status)
+                    .Select(g => new { Status = g.Key.ToString(), Count = g.Count() })
+                    .ToList(),
+                // Get favorite trainer using LINQ to Objects
+                FavoriteTrainer = allAppointments
+                    .GroupBy(a => a.TrainerId)
+                    .Select(g => new 
+                    { 
+                        TrainerId = g.Key, 
+                        Count = g.Count(),
+                        TrainerName = trainers.FirstOrDefault(t => t.Id == g.Key)?.FullName ?? "Unknown"
+                    })
+                    .OrderByDescending(x => x.Count)
+                    .FirstOrDefault()
+            };
+
             return View(user);
         }
 

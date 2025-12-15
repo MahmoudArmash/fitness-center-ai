@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 
 namespace FitnessCenter.Controllers
 {
@@ -33,26 +34,105 @@ namespace FitnessCenter.Controllers
             _logger = logger;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string statusFilter, string dateFilter, string searchTerm)
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return NotFound();
 
             var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
 
-            var appointments = isAdmin
-                ? await _context.Appointments
-                    .Include(a => a.Member)
-                    .Include(a => a.Trainer)
-                    .Include(a => a.Service)
-                    .OrderByDescending(a => a.AppointmentDateTime)
-                    .ToListAsync()
-                : await _context.Appointments
-                    .Where(a => a.MemberId == user.Id)
-                    .Include(a => a.Trainer)
-                    .Include(a => a.Service)
-                    .OrderByDescending(a => a.AppointmentDateTime)
-                    .ToListAsync();
+            // Build LINQ query with multiple filters
+            var query = _context.Appointments
+                .Include(a => a.Member)
+                .Include(a => a.Trainer)
+                .Include(a => a.Service)
+                .AsQueryable();
+
+            // Apply role-based filtering using LINQ
+            if (!isAdmin)
+            {
+                query = query.Where(a => a.MemberId == user.Id);
+            }
+
+            // Apply status filter using LINQ
+            if (!string.IsNullOrWhiteSpace(statusFilter) && 
+                Enum.TryParse<AppointmentStatus>(statusFilter, out var status))
+            {
+                query = query.Where(a => a.Status == status);
+            }
+
+            // Apply date filter using LINQ
+            if (!string.IsNullOrWhiteSpace(dateFilter))
+            {
+                var today = DateTime.Today;
+                query = dateFilter.ToLower() switch
+                {
+                    "today" => query.Where(a => a.AppointmentDateTime.Date == today),
+                    "week" => query.Where(a => a.AppointmentDateTime >= today && 
+                                              a.AppointmentDateTime <= today.AddDays(7)),
+                    "month" => query.Where(a => a.AppointmentDateTime >= today && 
+                                               a.AppointmentDateTime <= today.AddMonths(1)),
+                    "past" => query.Where(a => a.AppointmentDateTime < today),
+                    "upcoming" => query.Where(a => a.AppointmentDateTime >= today),
+                    _ => query
+                };
+            }
+
+            // Apply search term using LINQ
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                query = query.Where(a => 
+                    (a.Member != null && (a.Member.FirstName.Contains(searchTerm) || 
+                                         a.Member.LastName.Contains(searchTerm))) ||
+                    (a.Trainer != null && (a.Trainer.FirstName.Contains(searchTerm) || 
+                                          a.Trainer.LastName.Contains(searchTerm))) ||
+                    (a.Service != null && a.Service.Name.Contains(searchTerm)) ||
+                    (a.Notes != null && a.Notes.Contains(searchTerm)));
+            }
+
+            // Order by date descending using LINQ
+            var appointments = await query
+                .OrderByDescending(a => a.AppointmentDateTime)
+                .ToListAsync();
+
+            // Get statistics using LINQ aggregations
+            var allAppointments = isAdmin
+                ? await _context.Appointments.ToListAsync()
+                : await _context.Appointments.Where(a => a.MemberId == user.Id).ToListAsync();
+
+            ViewBag.Statistics = new
+            {
+                Total = allAppointments.Count,
+                Pending = allAppointments.Count(a => a.Status == AppointmentStatus.Pending),
+                Confirmed = allAppointments.Count(a => a.Status == AppointmentStatus.Confirmed),
+                Completed = allAppointments.Count(a => a.Status == AppointmentStatus.Completed),
+                Cancelled = allAppointments.Count(a => a.Status == AppointmentStatus.Cancelled),
+                TotalRevenue = allAppointments
+                    .Where(a => a.Status == AppointmentStatus.Completed)
+                    .Sum(a => a.Price),
+                UpcomingCount = allAppointments.Count(a => a.AppointmentDateTime >= DateTime.Now),
+                // Group appointments by status using LINQ
+                AppointmentsByStatus = allAppointments
+                    .GroupBy(a => a.Status)
+                    .Select(g => new { Status = g.Key.ToString(), Count = g.Count() })
+                    .ToList(),
+                // Group appointments by month using LINQ
+                AppointmentsByMonth = allAppointments
+                    .Where(a => a.AppointmentDateTime >= DateTime.Now.AddMonths(-6))
+                    .GroupBy(a => new { a.AppointmentDateTime.Year, a.AppointmentDateTime.Month })
+                    .Select(g => new { 
+                        Year = g.Key.Year, 
+                        Month = g.Key.Month, 
+                        Count = g.Count() 
+                    })
+                    .OrderBy(x => x.Year)
+                    .ThenBy(x => x.Month)
+                    .ToList()
+            };
+
+            ViewBag.StatusFilter = statusFilter;
+            ViewBag.DateFilter = dateFilter;
+            ViewBag.SearchTerm = searchTerm;
 
             return View(appointments);
         }
@@ -132,7 +212,26 @@ namespace FitnessCenter.Controllers
         public async Task<IActionResult> GetAvailableTrainers(int serviceId, DateTime appointmentDateTime)
         {
             var trainers = await _appointmentService.GetAvailableTrainersAsync(appointmentDateTime, serviceId);
-            return Json(trainers.Select(t => new { t.Id, t.FullName }));
+            
+            // Use LINQ Select to transform data
+            var result = trainers
+                .Select(t => new 
+                { 
+                    t.Id, 
+                    t.FullName,
+                    t.Email,
+                    t.Phone,
+                    t.Bio,
+                    // Count upcoming appointments using LINQ
+                    UpcomingAppointments = _context.Appointments
+                        .Count(a => a.TrainerId == t.Id && 
+                                   a.AppointmentDateTime >= DateTime.Now && 
+                                   a.Status != AppointmentStatus.Cancelled)
+                })
+                .OrderBy(t => t.FullName)
+                .ToList();
+            
+            return Json(result);
         }
 
         [Authorize(Roles = "Admin")]

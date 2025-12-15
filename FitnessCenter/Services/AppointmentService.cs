@@ -1,6 +1,7 @@
 using FitnessCenter.Data;
 using FitnessCenter.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace FitnessCenter.Services
 {
@@ -46,13 +47,14 @@ namespace FitnessCenter.Services
         {
             var appointmentEnd = appointmentDateTime.AddMinutes(durationMinutes);
 
+            // Optimized LINQ query with better conflict detection logic
             var conflictingAppointments = await _context.Appointments
                 .Where(a => a.TrainerId == trainerId &&
                            a.Status != AppointmentStatus.Cancelled &&
-                           a.Id != (excludeAppointmentId ?? -1) &&
-                           ((a.AppointmentDateTime <= appointmentDateTime && a.AppointmentDateTime.AddMinutes(a.DurationMinutes) > appointmentDateTime) ||
-                            (a.AppointmentDateTime < appointmentEnd && a.AppointmentDateTime.AddMinutes(a.DurationMinutes) >= appointmentEnd) ||
-                            (a.AppointmentDateTime >= appointmentDateTime && a.AppointmentDateTime.AddMinutes(a.DurationMinutes) <= appointmentEnd)))
+                           (excludeAppointmentId == null || a.Id != excludeAppointmentId.Value) &&
+                           // Simplified conflict detection: appointments overlap if one starts before the other ends
+                           a.AppointmentDateTime < appointmentEnd &&
+                           a.AppointmentDateTime.AddMinutes(a.DurationMinutes) > appointmentDateTime)
                 .AnyAsync();
 
             return conflictingAppointments;
@@ -63,38 +65,46 @@ namespace FitnessCenter.Services
             var dayOfWeek = date.DayOfWeek;
             var timeOfDay = date.TimeOfDay;
 
-            // Get trainers who have expertise in this service
+            // Get service first using LINQ
+            var service = await _context.Services.FindAsync(serviceId);
+            if (service == null)
+                return new List<Trainer>();
+
+            var appointmentEnd = timeOfDay.Add(TimeSpan.FromMinutes(service.DurationMinutes));
+
+            // Use LINQ to get all relevant data in one query
             var trainersWithExpertise = await _context.Trainers
                 .Where(t => t.TrainerExpertises.Any(te => te.ServiceId == serviceId))
                 .Include(t => t.WorkingHours)
                 .Include(t => t.Appointments)
                 .ToListAsync();
 
-            var availableTrainers = new List<Trainer>();
-
-            foreach (var trainer in trainersWithExpertise)
-            {
-                // Check if trainer has working hours for this day
-                var workingHours = trainer.WorkingHours.FirstOrDefault(wh => wh.DayOfWeek == dayOfWeek);
-                if (workingHours == null)
-                    continue;
-
-                // Check if the requested time is within working hours
-                var service = await _context.Services.FindAsync(serviceId);
-                if (service == null)
-                    continue;
-
-                var appointmentEnd = timeOfDay.Add(TimeSpan.FromMinutes(service.DurationMinutes));
-                if (timeOfDay < workingHours.StartTime || appointmentEnd > workingHours.EndTime)
-                    continue;
-
-                // Check for conflicts
-                var hasConflict = await HasConflictAsync(trainer.Id, date, service.DurationMinutes);
-                if (!hasConflict)
+            // Use LINQ Where and SelectMany for filtering
+            var availableTrainers = trainersWithExpertise
+                .Where(trainer =>
                 {
-                    availableTrainers.Add(trainer);
-                }
-            }
+                    // Check if trainer has working hours for this day using LINQ
+                    var workingHours = trainer.WorkingHours
+                        .FirstOrDefault(wh => wh.DayOfWeek == dayOfWeek);
+                    
+                    if (workingHours == null)
+                        return false;
+
+                    // Check if the requested time is within working hours
+                    if (timeOfDay < workingHours.StartTime || appointmentEnd > workingHours.EndTime)
+                        return false;
+
+                    // Check for conflicts using LINQ
+                    var appointmentEndDateTime = date.AddMinutes(service.DurationMinutes);
+                    var hasConflict = trainer.Appointments
+                        .Any(a => a.Status != AppointmentStatus.Cancelled &&
+                                 a.AppointmentDateTime < appointmentEndDateTime &&
+                                 a.AppointmentDateTime.AddMinutes(a.DurationMinutes) > date);
+
+                    return !hasConflict;
+                })
+                .OrderBy(t => t.FullName)
+                .ToList();
 
             return availableTrainers;
         }

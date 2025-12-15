@@ -4,6 +4,7 @@ using FitnessCenter.Models;
 using FitnessCenter.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
+using System.Linq;
 
 namespace FitnessCenter.Controllers;
 
@@ -46,12 +47,17 @@ public class HomeController : Controller
             // Test database connection
             var canConnect = await _context.Database.CanConnectAsync();
             
-            // Get counts from database
+            // Get counts from database using LINQ
             var fitnessCenterCount = await _context.FitnessCenters.CountAsync();
             var memberCount = await _context.Users.CountAsync();
             var serviceCount = await _context.Services.CountAsync();
             var trainerCount = await _context.Trainers.CountAsync();
             var appointmentCount = await _context.Appointments.CountAsync();
+
+            // Use LINQ to get detailed statistics
+            var appointments = await _context.Appointments.ToListAsync();
+            var services = await _context.Services.ToListAsync();
+            var trainers = await _context.Trainers.ToListAsync();
 
             var healthInfo = new
             {
@@ -69,6 +75,36 @@ public class HomeController : Controller
                     Services = serviceCount,
                     Trainers = trainerCount,
                     Appointments = appointmentCount
+                },
+                // Advanced statistics using LINQ aggregations
+                Statistics = new
+                {
+                    // Appointment statistics using LINQ GroupBy
+                    AppointmentsByStatus = appointments
+                        .GroupBy(a => a.Status)
+                        .Select(g => new { Status = g.Key.ToString(), Count = g.Count() })
+                        .ToList(),
+                    // Service statistics using LINQ
+                    ServicesByType = services
+                        .GroupBy(s => s.Type)
+                        .Select(g => new { Type = g.Key, Count = g.Count() })
+                        .ToList(),
+                    AverageServicePrice = services.Any() 
+                        ? services.Average(s => s.Price) 
+                        : 0,
+                    // Trainer statistics using LINQ
+                    TrainersByFitnessCenter = trainers
+                        .GroupBy(t => t.FitnessCenterId)
+                        .Select(g => new { FitnessCenterId = g.Key, Count = g.Count() })
+                        .ToList(),
+                    // Revenue statistics using LINQ
+                    TotalRevenue = appointments
+                        .Where(a => a.Status == AppointmentStatus.Completed)
+                        .Sum(a => a.Price),
+                    // Recent activity using LINQ
+                    RecentAppointments = appointments
+                        .Where(a => a.CreatedDate >= DateTime.Now.AddDays(-7))
+                        .Count()
                 },
                 Timestamp = DateTime.Now
             };
@@ -153,11 +189,15 @@ public class HomeController : Controller
             }
             else
             {
+                // Use LINQ Select to transform error collection
                 return Json(new
                 {
                     Success = false,
                     Message = "Failed to create admin user.",
-                    Errors = result.Errors.Select(e => e.Description).ToArray(),
+                    Errors = result.Errors
+                        .Select(e => new { e.Code, e.Description })
+                        .ToArray(),
+                    ErrorCount = result.Errors.Count(),
                     Timestamp = DateTime.Now
                 });
             }
