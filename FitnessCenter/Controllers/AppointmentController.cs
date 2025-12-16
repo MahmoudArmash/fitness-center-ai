@@ -82,10 +82,12 @@ namespace FitnessCenter.Controllers
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
                 query = query.Where(a => 
-                    (a.Member != null && (a.Member.FirstName.Contains(searchTerm) || 
-                                         a.Member.LastName.Contains(searchTerm))) ||
-                    (a.Trainer != null && (a.Trainer.FirstName.Contains(searchTerm) || 
-                                          a.Trainer.LastName.Contains(searchTerm))) ||
+                    (a.Member != null && 
+                     ((a.Member!.FirstName != null && a.Member.FirstName.Contains(searchTerm)) || 
+                      (a.Member!.LastName != null && a.Member.LastName.Contains(searchTerm)))) ||
+                    (a.Trainer != null && 
+                     (a.Trainer.FirstName.Contains(searchTerm) || 
+                      a.Trainer.LastName.Contains(searchTerm))) ||
                     (a.Service != null && a.Service.Name.Contains(searchTerm)) ||
                     (a.Notes != null && a.Notes.Contains(searchTerm)));
             }

@@ -33,9 +33,10 @@ namespace FitnessCenter.Controllers
                                         (s.Description != null && s.Description.Contains(searchTerm)));
             }
 
-            if (!string.IsNullOrWhiteSpace(serviceType))
-            {
-                query = query.Where(s => s.Type == serviceType);
+            if (!string.IsNullOrWhiteSpace(serviceType) &&
+                            Enum.TryParse<ServiceType>(serviceType, out var parsedServiceType))
+                        {
+                                query = query.Where(s => s.Type == parsedServiceType);
             }
 
             if (fitnessCenterId.HasValue)
@@ -159,4 +160,5 @@ namespace FitnessCenter.Controllers
         }
     }
 }
+
 
