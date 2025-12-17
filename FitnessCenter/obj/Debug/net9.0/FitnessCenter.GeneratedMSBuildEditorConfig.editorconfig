@@ -76,6 +76,14 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQUlcRGlldFBsYW5SZWNvbW1lbmRhdGlvbnMuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/mo3ta/Documents/CsharpFund/fitness-center-ai/FitnessCenter/Views/AI/ExerciseVisualization.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQUlcRXhlcmNpc2VWaXN1YWxpemF0aW9uLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/mo3ta/Documents/CsharpFund/fitness-center-ai/FitnessCenter/Views/AI/ExerciseVisualizationResult.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQUlcRXhlcmNpc2VWaXN1YWxpemF0aW9uUmVzdWx0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/mo3ta/Documents/CsharpFund/fitness-center-ai/FitnessCenter/Views/AI/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQUlcSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 

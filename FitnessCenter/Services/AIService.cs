@@ -8,6 +8,7 @@ namespace FitnessCenter.Services
         Task<string> AnalyzePhotoAndGetRecommendationsAsync(Stream photoStream, string fileName);
         Task<string> AnalyzePhotoWithBodyMetricsAsync(Stream photoStream, string fileName, decimal? height, decimal? weight, string? gender, DateTime? dateOfBirth);
         Task<string> GetDietPlanRecommendationsAsync(decimal? height, decimal? weight, string? gender, DateTime? dateOfBirth, string? fitnessGoal);
+        Task<string> GenerateExerciseVisualizationImageAsync(string exerciseName, decimal? height, decimal? weight, string? gender, Stream? userPhotoStream = null, string? photoFileName = null);
     }
 
     public class AIService : IAIService
@@ -153,6 +154,135 @@ namespace FitnessCenter.Services
             promptBuilder.AppendLine("\nFormat the response in a clear, structured way that is easy to follow.");
 
             return await CallGeminiAPIAsync(promptBuilder.ToString());
+        }
+
+        public async Task<string> GenerateExerciseVisualizationImageAsync(string exerciseName, decimal? height, decimal? weight, string? gender, Stream? userPhotoStream = null, string? photoFileName = null)
+        {
+            var apiKey = _configuration["OpenAI:ApiKey"];
+            var model = _configuration["OpenAI:ImageModel"] ?? "dall-e-3";
+
+            if (string.IsNullOrEmpty(apiKey))
+            {
+                throw new InvalidOperationException("OpenAI API key is not configured.");
+            }
+
+            try
+            {
+                // If user photo is provided, analyze it with Gemini to get body description
+                string? bodyDescription = null;
+                if (userPhotoStream != null && !string.IsNullOrEmpty(photoFileName))
+                {
+                    try
+                    {
+                        var mimeType = GetMimeType(photoFileName);
+                        // Reset stream position if needed
+                        if (userPhotoStream.CanSeek)
+                        {
+                            userPhotoStream.Position = 0;
+                        }
+
+                        var analysisPrompt = $"Analyze this person's body type, physique, and physical characteristics. Provide a brief, professional description focusing on body build, muscle definition, and overall physique that would be useful for creating a fitness visualization. Keep it concise (2-3 sentences max).";
+                        bodyDescription = await CallGeminiAPIAsync(analysisPrompt, userPhotoStream, mimeType);
+                        
+                        // Reset stream position again if needed
+                        if (userPhotoStream.CanSeek)
+                        {
+                            userPhotoStream.Position = 0;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to analyze user photo with Gemini, continuing with body metrics only");
+                        // Continue without photo analysis
+                    }
+                }
+
+                // Build the prompt for image generation
+                var promptBuilder = new StringBuilder();
+                promptBuilder.Append($"A realistic, professional fitness illustration showing a person performing the exercise '{exerciseName}'. ");
+
+                // Use photo analysis if available, otherwise use body metrics
+                if (!string.IsNullOrEmpty(bodyDescription))
+                {
+                    promptBuilder.Append($"The person has the following characteristics: {bodyDescription}. ");
+                }
+                else
+                {
+                    // Add body type information if available
+                    if (height.HasValue && weight.HasValue)
+                    {
+                        var bmi = (double)(weight.Value / ((height.Value / 100) * (height.Value / 100)));
+                        string bodyType = bmi switch
+                        {
+                            < 18.5 => "slim",
+                            < 25 => "athletic and fit",
+                            < 30 => "muscular and strong",
+                            _ => "strong and powerful"
+                        };
+                        promptBuilder.Append($"The person has a {bodyType} body type (height: {height}cm, weight: {weight}kg). ");
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(gender))
+                {
+                    promptBuilder.Append($"The person is {gender.ToLower()}. ");
+                }
+
+                promptBuilder.Append("The image should show proper form and technique. ");
+                promptBuilder.Append("Professional fitness photography style, clean background, well-lit, inspiring and motivational. ");
+                promptBuilder.Append("The person should be wearing appropriate workout attire. ");
+                promptBuilder.Append("High quality, detailed, realistic illustration.");
+
+                var prompt = promptBuilder.ToString();
+
+                // Call OpenAI DALL-E API
+                var requestBody = new
+                {
+                    model = model,
+                    prompt = prompt,
+                    n = 1,
+                    size = "1024x1024",
+                    quality = "standard",
+                    response_format = "url"
+                };
+
+                var json = JsonSerializer.Serialize(requestBody);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                _httpClient.DefaultRequestHeaders.Clear();
+                _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
+
+                var url = "https://api.openai.com/v1/images/generations";
+                var response = await _httpClient.PostAsync(url, content);
+                response.EnsureSuccessStatusCode();
+
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var responseJson = JsonDocument.Parse(responseContent);
+
+                var imageUrl = responseJson.RootElement
+                    .GetProperty("data")[0]
+                    .GetProperty("url")
+                    .GetString();
+
+                if (string.IsNullOrEmpty(imageUrl))
+                {
+                    throw new Exception("Failed to get image URL from OpenAI API.");
+                }
+
+                // Download the image and save it locally
+                var imageResponse = await _httpClient.GetAsync(imageUrl);
+                imageResponse.EnsureSuccessStatusCode();
+
+                var imageBytes = await imageResponse.Content.ReadAsByteArrayAsync();
+                var imageBase64 = Convert.ToBase64String(imageBytes);
+
+                return imageBase64;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calling OpenAI DALL-E API");
+                throw new Exception("Failed to generate exercise visualization image.", ex);
+            }
         }
 
         private string GetMimeType(string fileName)

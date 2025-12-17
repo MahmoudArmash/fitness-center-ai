@@ -211,6 +211,138 @@ namespace FitnessCenter.Controllers
         {
             return View();
         }
+
+        [HttpGet]
+        public async Task<IActionResult> ExerciseVisualization()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user != null)
+            {
+                ViewBag.UserHeight = user.Height;
+                ViewBag.UserWeight = user.Weight;
+                ViewBag.UserGender = user.Gender;
+                ViewBag.UserDateOfBirth = user.DateOfBirth;
+                ViewBag.UserPhotoPath = user.PhotoPath;
+            }
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> GenerateExerciseVisualization(string exerciseName, decimal? height, decimal? weight, string? gender, IFormFile? photo, bool useProfileMetrics = true)
+        {
+            if (string.IsNullOrWhiteSpace(exerciseName))
+            {
+                ModelState.AddModelError("", "Exercise name is required.");
+                var user = await _userManager.GetUserAsync(User);
+                if (user != null)
+                {
+                    ViewBag.UserHeight = user.Height;
+                    ViewBag.UserWeight = user.Weight;
+                    ViewBag.UserGender = user.Gender;
+                    ViewBag.UserDateOfBirth = user.DateOfBirth;
+                    ViewBag.UserPhotoPath = user.PhotoPath;
+                }
+                return View("ExerciseVisualization");
+            }
+
+            try
+            {
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null) return NotFound();
+
+                // Get body metrics - use form input if provided, otherwise use profile data
+                decimal? finalHeight = height;
+                decimal? finalWeight = weight;
+                string? finalGender = gender;
+
+                if (useProfileMetrics)
+                {
+                    finalHeight ??= user.Height;
+                    finalWeight ??= user.Weight;
+                    finalGender ??= user.Gender;
+                }
+
+                Stream? photoStream = null;
+                string? photoFileName = null;
+
+                // If user uploaded a photo, use it; otherwise try to use profile photo
+                if (photo != null && photo.Length > 0)
+                {
+                    // Validate file type
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+                    var fileExtension = Path.GetExtension(photo.FileName).ToLowerInvariant();
+                    if (!allowedExtensions.Contains(fileExtension))
+                    {
+                        ModelState.AddModelError("", "Please upload a valid image file (JPG, PNG, or GIF).");
+                        var userForError = await _userManager.GetUserAsync(User);
+                        if (userForError != null)
+                        {
+                            ViewBag.UserHeight = userForError.Height;
+                            ViewBag.UserWeight = userForError.Weight;
+                            ViewBag.UserGender = userForError.Gender;
+                            ViewBag.UserDateOfBirth = userForError.DateOfBirth;
+                            ViewBag.UserPhotoPath = userForError.PhotoPath;
+                        }
+                        return View("ExerciseVisualization");
+                    }
+
+                    photoStream = photo.OpenReadStream();
+                    photoFileName = photo.FileName;
+                }
+                else if (!string.IsNullOrEmpty(user.PhotoPath))
+                {
+                    // Try to use profile photo
+                    var profilePhotoPath = Path.Combine(_environment.WebRootPath, user.PhotoPath.TrimStart('/'));
+                    if (System.IO.File.Exists(profilePhotoPath))
+                    {
+                        photoStream = new FileStream(profilePhotoPath, FileMode.Open, FileAccess.Read);
+                        photoFileName = Path.GetFileName(profilePhotoPath);
+                    }
+                }
+
+                // Generate the exercise visualization image
+                string imageBase64;
+                try
+                {
+                    imageBase64 = await _aiService.GenerateExerciseVisualizationImageAsync(
+                        exerciseName, finalHeight, finalWeight, finalGender, photoStream, photoFileName);
+                }
+                finally
+                {
+                    photoStream?.Dispose();
+                }
+
+                ViewBag.ExerciseName = exerciseName;
+                ViewBag.ImageBase64 = imageBase64;
+                ViewBag.Height = finalHeight;
+                ViewBag.Weight = finalWeight;
+                ViewBag.Gender = finalGender;
+                ViewBag.Success = true;
+
+                return View("ExerciseVisualizationResult");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating exercise visualization");
+                ModelState.AddModelError("", "An error occurred while generating the exercise visualization. Please try again.");
+                var user = await _userManager.GetUserAsync(User);
+                if (user != null)
+                {
+                    ViewBag.UserHeight = user.Height;
+                    ViewBag.UserWeight = user.Weight;
+                    ViewBag.UserGender = user.Gender;
+                    ViewBag.UserDateOfBirth = user.DateOfBirth;
+                    ViewBag.UserPhotoPath = user.PhotoPath;
+                }
+                return View("ExerciseVisualization");
+            }
+        }
+
+        public IActionResult ExerciseVisualizationResult()
+        {
+            return View();
+        }
     }
 }
 
