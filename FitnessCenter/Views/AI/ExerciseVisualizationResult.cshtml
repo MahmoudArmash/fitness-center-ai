@@ -36,18 +36,20 @@
                         }
                     </div>
 
-                    <div class="text-center mb-4">
-                        @if (!string.IsNullOrEmpty(ViewBag.ImageBase64))
+                    <div class="mb-4">
+                        @if (!string.IsNullOrEmpty(ViewBag.VisualizationDescription))
                         {
-                            <img src="data:image/png;base64,@ViewBag.ImageBase64" 
-                                 alt="Exercise Visualization: @ViewBag.ExerciseName" 
-                                 class="img-fluid rounded shadow" 
-                                 style="max-width: 100%; max-height: 800px;" />
+                            <div class="visualization-description p-4 bg-light rounded border">
+                                <h5 class="mb-3"><i class="bi bi-eye"></i> Visualization Description</h5>
+                                <div class="visualization-content">
+                                    @Html.Raw(ViewBag.VisualizationDescription?.Replace("\n", "<br/>"))
+                                </div>
+                            </div>
                         }
                         else
                         {
                             <div class="alert alert-warning">
-                                <p>Image could not be generated. Please try again.</p>
+                                <p>Visualization could not be generated. Please try again.</p>
                             </div>
                         }
                     </div>
@@ -55,8 +57,8 @@
                     <div class="alert alert-info">
                         <h5><i class="bi bi-info-circle"></i> About This Visualization</h5>
                         <p class="mb-0">
-                            This AI-generated image shows how you might look performing the exercise based on your body metrics. 
-                            The visualization is created using advanced AI technology and is intended for motivational and educational purposes. 
+                            This AI-generated visualization description shows how you might look performing the exercise based on your body metrics. 
+                            The visualization is created using Google Gemini AI and is intended for motivational and educational purposes. 
                             Always consult with a fitness professional before starting any new exercise routine.
                         </p>
                     </div>
@@ -81,4 +83,15 @@
         </div>
     </div>
 </div>
+
+<style>
+    .visualization-description {
+        line-height: 1.8;
+        white-space: pre-wrap;
+    }
+    .visualization-content {
+        font-size: 1.05rem;
+        color: #333;
+    }
+</style>
 

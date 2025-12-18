@@ -62,10 +62,40 @@ A comprehensive ASP.NET Core MVC application for managing a fitness center with 
    - Open `appsettings.json`
    - Update the `DefaultConnection` string if needed (default uses SQLite: `Data Source=FitnessCenter.db`)
 
-3. **Configure Google Gemini API Key**
-   - Open `appsettings.json`
-   - Replace `your-gemini-api-key-here` in `GoogleGemini:ApiKey` with your actual Google Gemini API key
-   - Get your API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+3. **Configure Google Gemini API Key** (Recommended: Use Environment Variable)
+   
+   **Option 1: Environment Variable (Recommended for Security)**
+   
+   **Windows (PowerShell):**
+   ```powershell
+   $env:GOOGLE_GEMINI_API_KEY="your-api-key-here"
+   ```
+   
+   **Windows (Command Prompt):**
+   ```cmd
+   set GOOGLE_GEMINI_API_KEY=your-api-key-here
+   ```
+   
+   **Windows (Permanent - System Properties):**
+   - Open System Properties → Environment Variables
+   - Add new User/System variable: `GOOGLE_GEMINI_API_KEY` = `your-api-key-here`
+   
+   **Linux/Mac:**
+   ```bash
+   export GOOGLE_GEMINI_API_KEY="your-api-key-here"
+   ```
+   
+   **Linux/Mac (Permanent - add to ~/.bashrc or ~/.zshrc):**
+   ```bash
+   echo 'export GOOGLE_GEMINI_API_KEY="your-api-key-here"' >> ~/.bashrc
+   source ~/.bashrc
+   ```
+   
+   **Option 2: Configuration File (Less Secure)**
+   - Open `appsettings.json` or `appsettings.Development.json`
+   - Add your API key to `GoogleGemini:ApiKey` (not recommended for production)
+   
+   **Get your API key from [Google AI Studio](https://makersuite.google.com/app/apikey)**
 
 4. **Restore packages and build**
    ```bash

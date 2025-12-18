@@ -26,12 +26,28 @@ namespace FitnessCenter.Services
 
         private async Task<string> CallGeminiAPIAsync(string prompt, Stream? photoStream = null, string? mimeType = null)
         {
-            var apiKey = _configuration["GoogleGemini:ApiKey"];
+            _logger.LogInformation("=== Starting Google Gemini API Call ===");
+            
+            // Check environment variable first (more secure), then fall back to configuration
+            var apiKey = Environment.GetEnvironmentVariable("GOOGLE_GEMINI_API_KEY") 
+                        ?? _configuration["GoogleGemini:ApiKey"];
             var model = _configuration["GoogleGemini:Model"] ?? "gemini-1.5-flash";
+
+            var apiKeySource = Environment.GetEnvironmentVariable("GOOGLE_GEMINI_API_KEY") != null 
+                ? "Environment Variable" 
+                : "Configuration File";
+            
+            _logger.LogInformation("Configuration - Model: {Model}, API Key Present: {HasApiKey}, Source: {Source}, Prompt Length: {PromptLength}",
+                model, !string.IsNullOrEmpty(apiKey), apiKeySource, prompt?.Length ?? 0);
 
             if (string.IsNullOrEmpty(apiKey))
             {
-                throw new InvalidOperationException("Google Gemini API key is not configured.");
+                _logger.LogError("Google Gemini API key is missing!");
+                throw new InvalidOperationException(
+                    "Google Gemini API key is not configured. " +
+                    "Please set the GOOGLE_GEMINI_API_KEY environment variable or add it to appsettings.json. " +
+                    "For Windows: set GOOGLE_GEMINI_API_KEY=your-api-key " +
+                    "For Linux/Mac: export GOOGLE_GEMINI_API_KEY=your-api-key");
             }
 
             try
@@ -42,12 +58,16 @@ namespace FitnessCenter.Services
                 };
 
                 // Add image if provided
+                bool hasImage = false;
                 if (photoStream != null && !string.IsNullOrEmpty(mimeType))
                 {
+                    _logger.LogInformation("Processing image - MIME Type: {MimeType}", mimeType);
                     using var memoryStream = new MemoryStream();
                     await photoStream.CopyToAsync(memoryStream);
                     var imageBytes = memoryStream.ToArray();
                     var base64Image = Convert.ToBase64String(imageBytes);
+                    _logger.LogInformation("Image processed - Size: {Size} bytes, Base64 Length: {Base64Length}", 
+                        imageBytes.Length, base64Image.Length);
 
                     parts.Add(new
                     {
@@ -57,6 +77,11 @@ namespace FitnessCenter.Services
                             data = base64Image
                         }
                     });
+                    hasImage = true;
+                }
+                else
+                {
+                    _logger.LogInformation("No image provided for this request");
                 }
 
                 var requestBody = new
@@ -72,29 +97,135 @@ namespace FitnessCenter.Services
 
                 var json = JsonSerializer.Serialize(requestBody);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
+                _logger.LogInformation("Request body created - JSON Length: {JsonLength}, Has Image: {HasImage}", 
+                    json.Length, hasImage);
 
                 _httpClient.DefaultRequestHeaders.Clear();
+                // Use v1beta endpoint for Gemini models (this is the correct endpoint)
                 var url = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}";
+                
+                // Mask API key in logs for security
+                var maskedUrl = url.Replace(apiKey, "***MASKED***");
+                _logger.LogInformation("Sending request to: {Url}", maskedUrl);
 
                 var response = await _httpClient.PostAsync(url, content);
-                response.EnsureSuccessStatusCode();
+                _logger.LogInformation("Response received - Status Code: {StatusCode}, Reason Phrase: {ReasonPhrase}", 
+                    response.StatusCode, response.ReasonPhrase);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogError("=== Google Gemini API ERROR ===");
+                    _logger.LogError("Status Code: {StatusCode}", response.StatusCode);
+                    _logger.LogError("Reason Phrase: {ReasonPhrase}", response.ReasonPhrase);
+                    _logger.LogError("Error Response: {ErrorContent}", errorContent);
+                    _logger.LogError("Request URL: {Url}", maskedUrl);
+                    _logger.LogError("Model: {Model}, Has Image: {HasImage}", model, hasImage);
+                    
+                    // Try v1 endpoint as fallback
+                    if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    {
+                        _logger.LogWarning("404 Not Found - Trying v1 endpoint as fallback...");
+                        url = $"https://generativelanguage.googleapis.com/v1/models/{model}:generateContent?key={apiKey}";
+                        maskedUrl = url.Replace(apiKey, "***MASKED***");
+                        _logger.LogInformation("Retrying with URL: {Url}", maskedUrl);
+                        
+                        response = await _httpClient.PostAsync(url, content);
+                        _logger.LogInformation("Fallback response - Status Code: {StatusCode}, Reason Phrase: {ReasonPhrase}", 
+                            response.StatusCode, response.ReasonPhrase);
+                        
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            errorContent = await response.Content.ReadAsStringAsync();
+                            _logger.LogError("=== Fallback Request Also Failed ===");
+                            _logger.LogError("Status Code: {StatusCode}", response.StatusCode);
+                            _logger.LogError("Error Response: {ErrorContent}", errorContent);
+                            throw new HttpRequestException($"Google Gemini API returned {response.StatusCode}: {errorContent}");
+                        }
+                        else
+                        {
+                            _logger.LogInformation("Fallback request succeeded!");
+                        }
+                    }
+                    else
+                    {
+                        throw new HttpRequestException($"Google Gemini API returned {response.StatusCode}: {errorContent}");
+                    }
+                }
+                else
+                {
+                    _logger.LogInformation("Request succeeded with status {StatusCode}", response.StatusCode);
+                }
 
                 var responseContent = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation("Response content length: {Length} characters", responseContent.Length);
+                
                 var responseJson = JsonDocument.Parse(responseContent);
 
-                var recommendations = responseJson.RootElement
-                    .GetProperty("candidates")[0]
+                // Check if response has candidates
+                if (!responseJson.RootElement.TryGetProperty("candidates", out var candidates) || 
+                    candidates.GetArrayLength() == 0)
+                {
+                    _logger.LogError("=== No Candidates in Response ===");
+                    _logger.LogError("Full Response: {Response}", responseContent);
+                    
+                    // Check for error in response
+                    if (responseJson.RootElement.TryGetProperty("error", out var error))
+                    {
+                        _logger.LogError("API Error Object: {Error}", error.ToString());
+                    }
+                    
+                    throw new Exception("No response candidates from Google Gemini API. The API may have blocked the request or returned an error.");
+                }
+
+                _logger.LogInformation("Found {Count} candidate(s) in response", candidates.GetArrayLength());
+                
+                var recommendations = candidates[0]
                     .GetProperty("content")
                     .GetProperty("parts")[0]
                     .GetProperty("text")
                     .GetString();
 
+                if (string.IsNullOrEmpty(recommendations))
+                {
+                    _logger.LogWarning("Recommendations text is null or empty");
+                }
+                else
+                {
+                    _logger.LogInformation("Successfully received recommendations - Length: {Length} characters", recommendations.Length);
+                }
+
+                _logger.LogInformation("=== Google Gemini API Call Completed Successfully ===");
                 return recommendations ?? "Unable to generate recommendations.";
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "=== HTTP ERROR calling Google Gemini API ===");
+                _logger.LogError("Exception Type: {ExceptionType}", ex.GetType().Name);
+                _logger.LogError("Exception Message: {Message}", ex.Message);
+                if (ex.InnerException != null)
+                {
+                    _logger.LogError("Inner Exception: {InnerException}", ex.InnerException.Message);
+                }
+                throw new Exception($"Failed to connect to Google Gemini API. Status: {ex.Message}. Please check your API key and internet connection.", ex);
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogError(ex, "=== JSON PARSING ERROR ===");
+                _logger.LogError("Failed to parse response from Google Gemini API");
+                throw new Exception("Failed to parse response from Google Gemini API. The API may have returned invalid JSON.", ex);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error calling Google Gemini API");
-                throw new Exception("Failed to generate recommendations from AI service.", ex);
+                _logger.LogError(ex, "=== UNEXPECTED ERROR calling Google Gemini API ===");
+                _logger.LogError("Exception Type: {ExceptionType}", ex.GetType().Name);
+                _logger.LogError("Exception Message: {Message}", ex.Message);
+                _logger.LogError("Stack Trace: {StackTrace}", ex.StackTrace);
+                if (ex.InnerException != null)
+                {
+                    _logger.LogError("Inner Exception: {InnerException}", ex.InnerException.ToString());
+                }
+                throw new Exception($"Failed to generate recommendations from AI service: {ex.Message}", ex);
             }
         }
 
@@ -158,14 +289,6 @@ namespace FitnessCenter.Services
 
         public async Task<string> GenerateExerciseVisualizationImageAsync(string exerciseName, decimal? height, decimal? weight, string? gender, Stream? userPhotoStream = null, string? photoFileName = null)
         {
-            var apiKey = _configuration["OpenAI:ApiKey"];
-            var model = _configuration["OpenAI:ImageModel"] ?? "dall-e-3";
-
-            if (string.IsNullOrEmpty(apiKey))
-            {
-                throw new InvalidOperationException("OpenAI API key is not configured.");
-            }
-
             try
             {
                 // If user photo is provided, analyze it with Gemini to get body description
@@ -183,12 +306,6 @@ namespace FitnessCenter.Services
 
                         var analysisPrompt = $"Analyze this person's body type, physique, and physical characteristics. Provide a brief, professional description focusing on body build, muscle definition, and overall physique that would be useful for creating a fitness visualization. Keep it concise (2-3 sentences max).";
                         bodyDescription = await CallGeminiAPIAsync(analysisPrompt, userPhotoStream, mimeType);
-                        
-                        // Reset stream position again if needed
-                        if (userPhotoStream.CanSeek)
-                        {
-                            userPhotoStream.Position = 0;
-                        }
                     }
                     catch (Exception ex)
                     {
@@ -197,14 +314,15 @@ namespace FitnessCenter.Services
                     }
                 }
 
-                // Build the prompt for image generation
+                // Build the prompt for detailed visualization description using Gemini
                 var promptBuilder = new StringBuilder();
-                promptBuilder.Append($"A realistic, professional fitness illustration showing a person performing the exercise '{exerciseName}'. ");
+                promptBuilder.AppendLine($"Create a detailed, vivid visualization description of a person performing the exercise '{exerciseName}'. ");
+                promptBuilder.AppendLine("Provide a comprehensive description that includes:");
 
                 // Use photo analysis if available, otherwise use body metrics
                 if (!string.IsNullOrEmpty(bodyDescription))
                 {
-                    promptBuilder.Append($"The person has the following characteristics: {bodyDescription}. ");
+                    promptBuilder.AppendLine($"\nThe person has the following characteristics: {bodyDescription}");
                 }
                 else
                 {
@@ -219,69 +337,36 @@ namespace FitnessCenter.Services
                             < 30 => "muscular and strong",
                             _ => "strong and powerful"
                         };
-                        promptBuilder.Append($"The person has a {bodyType} body type (height: {height}cm, weight: {weight}kg). ");
+                        promptBuilder.AppendLine($"\nThe person has a {bodyType} body type (height: {height}cm, weight: {weight}kg).");
                     }
                 }
 
                 if (!string.IsNullOrEmpty(gender))
                 {
-                    promptBuilder.Append($"The person is {gender.ToLower()}. ");
+                    promptBuilder.AppendLine($"The person is {gender.ToLower()}.");
                 }
 
-                promptBuilder.Append("The image should show proper form and technique. ");
-                promptBuilder.Append("Professional fitness photography style, clean background, well-lit, inspiring and motivational. ");
-                promptBuilder.Append("The person should be wearing appropriate workout attire. ");
-                promptBuilder.Append("High quality, detailed, realistic illustration.");
+                promptBuilder.AppendLine("\nProvide a detailed visualization description that includes:");
+                promptBuilder.AppendLine("- Body position and posture during the exercise");
+                promptBuilder.AppendLine("- Muscle groups being engaged (visible muscle definition)");
+                promptBuilder.AppendLine("- Proper form and technique details");
+                promptBuilder.AppendLine("- Facial expression and body language (showing focus and determination)");
+                promptBuilder.AppendLine("- Workout attire and appearance");
+                promptBuilder.AppendLine("- Setting and environment (professional fitness studio, clean background)");
+                promptBuilder.AppendLine("- Lighting and overall aesthetic");
+                promptBuilder.AppendLine("\nFormat the description in a clear, structured way with sections. Make it vivid and inspiring, as if describing a professional fitness photograph.");
 
                 var prompt = promptBuilder.ToString();
 
-                // Call OpenAI DALL-E API
-                var requestBody = new
-                {
-                    model = model,
-                    prompt = prompt,
-                    n = 1,
-                    size = "1024x1024",
-                    quality = "standard",
-                    response_format = "url"
-                };
+                // Use Gemini to generate the detailed visualization description
+                var visualizationDescription = await CallGeminiAPIAsync(prompt);
 
-                var json = JsonSerializer.Serialize(requestBody);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                _httpClient.DefaultRequestHeaders.Clear();
-                _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
-
-                var url = "https://api.openai.com/v1/images/generations";
-                var response = await _httpClient.PostAsync(url, content);
-                response.EnsureSuccessStatusCode();
-
-                var responseContent = await response.Content.ReadAsStringAsync();
-                var responseJson = JsonDocument.Parse(responseContent);
-
-                var imageUrl = responseJson.RootElement
-                    .GetProperty("data")[0]
-                    .GetProperty("url")
-                    .GetString();
-
-                if (string.IsNullOrEmpty(imageUrl))
-                {
-                    throw new Exception("Failed to get image URL from OpenAI API.");
-                }
-
-                // Download the image and save it locally
-                var imageResponse = await _httpClient.GetAsync(imageUrl);
-                imageResponse.EnsureSuccessStatusCode();
-
-                var imageBytes = await imageResponse.Content.ReadAsByteArrayAsync();
-                var imageBase64 = Convert.ToBase64String(imageBytes);
-
-                return imageBase64;
+                return visualizationDescription;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error calling OpenAI DALL-E API");
-                throw new Exception("Failed to generate exercise visualization image.", ex);
+                _logger.LogError(ex, "Error calling Google Gemini API for exercise visualization");
+                throw new Exception("Failed to generate exercise visualization using Google AI.", ex);
             }
         }
 

@@ -12,12 +12,13 @@
                 <p class="lead">Get personalized diet and nutrition plan recommendations based on your body metrics and fitness goals.</p>
                 
                 <form asp-action="GetDietPlan" method="post">
+                    @Html.AntiForgeryToken()
                     <div asp-validation-summary="All" class="text-danger mb-3"></div>
 
                     <div class="mb-3">
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="useProfileMetrics" id="useProfileMetrics" value="true" checked />
                             <input type="hidden" name="useProfileMetrics" value="false" />
+                            <input class="form-check-input" type="checkbox" name="useProfileMetrics" id="useProfileMetrics" value="true" checked />
                             <label class="form-check-label" for="useProfileMetrics">
                                 Use my profile information (if available)
                             </label>

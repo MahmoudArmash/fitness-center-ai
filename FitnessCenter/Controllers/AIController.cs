@@ -48,8 +48,15 @@ namespace FitnessCenter.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AnalyzePhoto(IFormFile photo, decimal? height, decimal? weight, string? gender, DateTime? dateOfBirth, bool useProfileMetrics = true)
         {
+            _logger.LogInformation("=== AnalyzePhoto Action Started ===");
+            _logger.LogInformation("Photo: {FileName}, Size: {Size} bytes, UseProfileMetrics: {UseProfileMetrics}", 
+                photo?.FileName, photo?.Length, useProfileMetrics);
+            _logger.LogInformation("Body Metrics - Height: {Height}, Weight: {Weight}, Gender: {Gender}, DateOfBirth: {DateOfBirth}",
+                height, weight, gender, dateOfBirth);
+
             if (photo == null || photo.Length == 0)
             {
+                _logger.LogWarning("No photo provided");
                 ModelState.AddModelError("", "Please select a photo to upload.");
                 return View("Index");
             }
@@ -57,8 +64,11 @@ namespace FitnessCenter.Controllers
             // Validate file type
             var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
             var fileExtension = Path.GetExtension(photo.FileName).ToLowerInvariant();
+            _logger.LogInformation("File extension: {Extension}", fileExtension);
+            
             if (!allowedExtensions.Contains(fileExtension))
             {
+                _logger.LogWarning("Invalid file extension: {Extension}", fileExtension);
                 ModelState.AddModelError("", "Please upload a valid image file (JPG, PNG, or GIF).");
                 return View("Index");
             }
@@ -66,6 +76,7 @@ namespace FitnessCenter.Controllers
             // Validate file size (max 10MB)
             if (photo.Length > 10 * 1024 * 1024)
             {
+                _logger.LogWarning("File too large: {Size} bytes", photo.Length);
                 ModelState.AddModelError("", "File size must be less than 10MB.");
                 return View("Index");
             }
@@ -73,7 +84,13 @@ namespace FitnessCenter.Controllers
             try
             {
                 var user = await _userManager.GetUserAsync(User);
-                if (user == null) return NotFound();
+                if (user == null)
+                {
+                    _logger.LogError("User not found");
+                    return NotFound();
+                }
+
+                _logger.LogInformation("User: {UserId}, Email: {Email}", user.Id, user.Email);
 
                 // Get body metrics - use form input if provided, otherwise use profile data
                 decimal? finalHeight = height;
@@ -83,26 +100,34 @@ namespace FitnessCenter.Controllers
 
                 if (useProfileMetrics)
                 {
+                    _logger.LogInformation("Using profile metrics - Profile Height: {Height}, Weight: {Weight}, Gender: {Gender}",
+                        user.Height, user.Weight, user.Gender);
                     finalHeight ??= user.Height;
                     finalWeight ??= user.Weight;
                     finalGender ??= user.Gender;
                     finalDateOfBirth ??= user.DateOfBirth;
                 }
 
+                _logger.LogInformation("Final metrics - Height: {Height}, Weight: {Weight}, Gender: {Gender}, DateOfBirth: {DateOfBirth}",
+                    finalHeight, finalWeight, finalGender, finalDateOfBirth);
+
                 // Save photo
                 var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", "ai-photos");
                 if (!Directory.Exists(uploadsFolder))
                 {
                     Directory.CreateDirectory(uploadsFolder);
+                    _logger.LogInformation("Created uploads folder: {Folder}", uploadsFolder);
                 }
 
                 var uniqueFileName = $"{user.Id}_{Guid.NewGuid()}{fileExtension}";
                 var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                _logger.LogInformation("Saving photo to: {FilePath}", filePath);
 
                 using (var fileStream = new FileStream(filePath, FileMode.Create))
                 {
                     await photo.CopyToAsync(fileStream);
                 }
+                _logger.LogInformation("Photo saved successfully");
 
                 // Analyze photo with AI (with or without body metrics)
                 using (var photoStream = new FileStream(filePath, FileMode.Open))
@@ -111,25 +136,57 @@ namespace FitnessCenter.Controllers
                     
                     if (finalHeight.HasValue || finalWeight.HasValue || !string.IsNullOrEmpty(finalGender) || finalDateOfBirth.HasValue)
                     {
+                        _logger.LogInformation("Calling AnalyzePhotoWithBodyMetricsAsync");
                         recommendations = await _aiService.AnalyzePhotoWithBodyMetricsAsync(
                             photoStream, photo.FileName, finalHeight, finalWeight, finalGender, finalDateOfBirth);
                     }
                     else
                     {
+                        _logger.LogInformation("Calling AnalyzePhotoAndGetRecommendationsAsync (no body metrics)");
                         recommendations = await _aiService.AnalyzePhotoAndGetRecommendationsAsync(photoStream, photo.FileName);
                     }
+
+                    _logger.LogInformation("Recommendations received - Length: {Length} characters", recommendations?.Length ?? 0);
 
                     ViewBag.PhotoPath = $"/uploads/ai-photos/{uniqueFileName}";
                     ViewBag.Recommendations = recommendations;
                     ViewBag.Success = true;
 
+                    _logger.LogInformation("=== AnalyzePhoto Action Completed Successfully ===");
                     return View("Recommendations");
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error analyzing photo");
-                ModelState.AddModelError("", "An error occurred while analyzing the photo. Please try again.");
+                _logger.LogError(ex, "=== ERROR in AnalyzePhoto Action ===");
+                _logger.LogError("Exception Type: {Type}", ex.GetType().Name);
+                _logger.LogError("Exception Message: {Message}", ex.Message);
+                _logger.LogError("Stack Trace: {StackTrace}", ex.StackTrace);
+                if (ex.InnerException != null)
+                {
+                    _logger.LogError("Inner Exception: {InnerException}", ex.InnerException.ToString());
+                }
+                
+                // Provide user-friendly error message based on exception type
+                string errorMessage = ex switch
+                {
+                    HttpRequestException httpEx => $"Unable to connect to AI service. Error: {httpEx.Message}. Please check your internet connection and API configuration.",
+                    InvalidOperationException invalidOpEx => $"Configuration error: {invalidOpEx.Message}. Please check appsettings.json.",
+                    _ => $"An error occurred while analyzing the photo: {ex.Message}. Please check the console logs for details."
+                };
+                
+                ModelState.AddModelError("", errorMessage);
+                
+                // Reload user data for the view
+                var user = await _userManager.GetUserAsync(User);
+                if (user != null)
+                {
+                    ViewBag.UserHeight = user.Height;
+                    ViewBag.UserWeight = user.Weight;
+                    ViewBag.UserGender = user.Gender;
+                    ViewBag.UserDateOfBirth = user.DateOfBirth;
+                }
+                
                 return View("Index");
             }
         }
@@ -301,11 +358,11 @@ namespace FitnessCenter.Controllers
                     }
                 }
 
-                // Generate the exercise visualization image
-                string imageBase64;
+                // Generate the exercise visualization description using Google Gemini
+                string visualizationDescription;
                 try
                 {
-                    imageBase64 = await _aiService.GenerateExerciseVisualizationImageAsync(
+                    visualizationDescription = await _aiService.GenerateExerciseVisualizationImageAsync(
                         exerciseName, finalHeight, finalWeight, finalGender, photoStream, photoFileName);
                 }
                 finally
@@ -314,7 +371,7 @@ namespace FitnessCenter.Controllers
                 }
 
                 ViewBag.ExerciseName = exerciseName;
-                ViewBag.ImageBase64 = imageBase64;
+                ViewBag.VisualizationDescription = visualizationDescription;
                 ViewBag.Height = finalHeight;
                 ViewBag.Weight = finalWeight;
                 ViewBag.Gender = finalGender;
