@@ -122,7 +122,54 @@ namespace FitnessCenter.Services
                     _logger.LogError("Request URL: {Url}", maskedUrl);
                     _logger.LogError("Model: {Model}, Has Image: {HasImage}", model, hasImage);
                     
-                    // Try v1 endpoint as fallback
+                    // Parse error response to provide better error messages
+                    string detailedErrorMessage = errorContent;
+                    try
+                    {
+                        var errorJson = JsonDocument.Parse(errorContent);
+                        if (errorJson.RootElement.TryGetProperty("error", out var errorObj))
+                        {
+                            var code = errorObj.TryGetProperty("code", out var codeElement) ? codeElement.GetInt32() : 0;
+                            var message = errorObj.TryGetProperty("message", out var messageElement) ? messageElement.GetString() : "";
+                            var status = errorObj.TryGetProperty("status", out var statusElement) ? statusElement.GetString() : "";
+                            
+                            _logger.LogError("Parsed Error - Code: {Code}, Status: {Status}, Message: {Message}", code, status, message);
+                            
+                            // Check for specific error cases
+                            if (response.StatusCode == System.Net.HttpStatusCode.Forbidden && 
+                                !string.IsNullOrEmpty(message) && 
+                                message.Contains("leaked", StringComparison.OrdinalIgnoreCase))
+                            {
+                                detailedErrorMessage = "Your API key has been reported as leaked and is no longer valid. " +
+                                    "Please generate a new API key from Google AI Studio (https://makersuite.google.com/app/apikey) " +
+                                    "and update your GOOGLE_GEMINI_API_KEY environment variable or appsettings.json. " +
+                                    "Never commit API keys to version control.";
+                            }
+                            else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                            {
+                                detailedErrorMessage = "Invalid API key. Please verify your GOOGLE_GEMINI_API_KEY environment variable " +
+                                    "or appsettings.json contains a valid API key from Google AI Studio.";
+                            }
+                            else if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests || 
+                                     (response.StatusCode == System.Net.HttpStatusCode.Forbidden && 
+                                      !string.IsNullOrEmpty(message) && 
+                                      message.Contains("quota", StringComparison.OrdinalIgnoreCase)))
+                            {
+                                detailedErrorMessage = "API quota exceeded. Please check your Google Cloud billing and quota limits.";
+                            }
+                            else if (!string.IsNullOrEmpty(message))
+                            {
+                                detailedErrorMessage = $"API Error ({status}): {message}";
+                            }
+                        }
+                    }
+                    catch (JsonException)
+                    {
+                        // If error response is not JSON, use the raw content
+                        _logger.LogWarning("Could not parse error response as JSON, using raw content");
+                    }
+                    
+                    // Try v1 endpoint as fallback only for 404 errors
                     if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                     {
                         _logger.LogWarning("404 Not Found - Trying v1 endpoint as fallback...");
@@ -140,7 +187,7 @@ namespace FitnessCenter.Services
                             _logger.LogError("=== Fallback Request Also Failed ===");
                             _logger.LogError("Status Code: {StatusCode}", response.StatusCode);
                             _logger.LogError("Error Response: {ErrorContent}", errorContent);
-                            throw new HttpRequestException($"Google Gemini API returned {response.StatusCode}: {errorContent}");
+                            throw new HttpRequestException($"Google Gemini API returned {response.StatusCode}: {detailedErrorMessage}");
                         }
                         else
                         {
@@ -149,7 +196,7 @@ namespace FitnessCenter.Services
                     }
                     else
                     {
-                        throw new HttpRequestException($"Google Gemini API returned {response.StatusCode}: {errorContent}");
+                        throw new HttpRequestException($"Google Gemini API returned {response.StatusCode}: {detailedErrorMessage}");
                     }
                 }
                 else
@@ -232,7 +279,11 @@ namespace FitnessCenter.Services
         public async Task<string> AnalyzePhotoAndGetRecommendationsAsync(Stream photoStream, string fileName)
         {
             var mimeType = GetMimeType(fileName);
-            var prompt = "Analyze this fitness photo and provide personalized exercise recommendations. Consider body type, posture, and suggest appropriate exercises, workout routines, and fitness goals. Be specific and actionable. Provide recommendations in a clear, structured format.";
+            var prompt = "Analyze this fitness photo and provide brief, concise personalized exercise recommendations. " +
+                        "Consider body type and posture. " +
+                        "Provide 3-5 key exercises with sets/reps, one workout routine suggestion, and one fitness goal. " +
+                        "Keep it brief and actionable (maximum 200 words). " +
+                        "Format: Use bullet points and short paragraphs.";
 
             return await CallGeminiAPIAsync(prompt, photoStream, mimeType);
         }
@@ -243,7 +294,8 @@ namespace FitnessCenter.Services
             var age = dateOfBirth.HasValue ? (int)((DateTime.Now - dateOfBirth.Value).TotalDays / 365.25) : (int?)null;
 
             var promptBuilder = new StringBuilder();
-            promptBuilder.AppendLine("Analyze this fitness photo and provide personalized exercise recommendations. Consider body type, posture, and suggest appropriate exercises, workout routines, and fitness goals. Be specific and actionable.");
+            promptBuilder.AppendLine("Analyze this fitness photo and provide brief, concise personalized exercise recommendations. " +
+                                    "Consider body type and posture. Be specific and actionable.");
 
             if (height.HasValue || weight.HasValue || !string.IsNullOrEmpty(gender) || age.HasValue)
             {
@@ -256,7 +308,9 @@ namespace FitnessCenter.Services
                 promptBuilder.AppendLine("\nUse this information along with the photo analysis to provide highly personalized recommendations. Consider BMI, body composition, and age-appropriate exercises.");
             }
 
-            promptBuilder.AppendLine("\nProvide recommendations in a clear, structured format with specific exercises, sets, reps, and workout schedules.");
+            promptBuilder.AppendLine("\nProvide brief recommendations (maximum 200 words): " +
+                                    "3-5 key exercises with sets/reps, one workout routine suggestion, and one fitness goal. " +
+                                    "Use bullet points and short paragraphs. Keep it concise.");
 
             return await CallGeminiAPIAsync(promptBuilder.ToString(), photoStream, mimeType);
         }
@@ -274,15 +328,14 @@ namespace FitnessCenter.Services
             if (age.HasValue) promptBuilder.AppendLine($"- Age: {age} years");
             if (!string.IsNullOrEmpty(fitnessGoal)) promptBuilder.AppendLine($"- Fitness Goal: {fitnessGoal}");
 
-            promptBuilder.AppendLine("\nProvide a comprehensive diet plan including:");
+            promptBuilder.AppendLine("\nProvide a brief, concise diet plan (maximum 250 words) including:");
             promptBuilder.AppendLine("- Daily calorie recommendations");
             promptBuilder.AppendLine("- Macronutrient breakdown (proteins, carbs, fats)");
-            promptBuilder.AppendLine("- Meal suggestions for breakfast, lunch, dinner, and snacks");
-            promptBuilder.AppendLine("- Specific food recommendations");
+            promptBuilder.AppendLine("- 2-3 meal suggestions for breakfast, lunch, dinner");
+            promptBuilder.AppendLine("- Key food recommendations");
             promptBuilder.AppendLine("- Hydration guidelines");
-            promptBuilder.AppendLine("- Any supplements that might be beneficial");
 
-            promptBuilder.AppendLine("\nFormat the response in a clear, structured way that is easy to follow.");
+            promptBuilder.AppendLine("\nFormat: Use bullet points and short paragraphs. Keep it concise and actionable.");
 
             return await CallGeminiAPIAsync(promptBuilder.ToString());
         }
@@ -346,15 +399,12 @@ namespace FitnessCenter.Services
                     promptBuilder.AppendLine($"The person is {gender.ToLower()}.");
                 }
 
-                promptBuilder.AppendLine("\nProvide a detailed visualization description that includes:");
+                promptBuilder.AppendLine("\nProvide a brief, vivid visualization description (maximum 150 words) that includes:");
                 promptBuilder.AppendLine("- Body position and posture during the exercise");
-                promptBuilder.AppendLine("- Muscle groups being engaged (visible muscle definition)");
-                promptBuilder.AppendLine("- Proper form and technique details");
-                promptBuilder.AppendLine("- Facial expression and body language (showing focus and determination)");
-                promptBuilder.AppendLine("- Workout attire and appearance");
-                promptBuilder.AppendLine("- Setting and environment (professional fitness studio, clean background)");
-                promptBuilder.AppendLine("- Lighting and overall aesthetic");
-                promptBuilder.AppendLine("\nFormat the description in a clear, structured way with sections. Make it vivid and inspiring, as if describing a professional fitness photograph.");
+                promptBuilder.AppendLine("- Key muscle groups being engaged");
+                promptBuilder.AppendLine("- Proper form highlights");
+                promptBuilder.AppendLine("- Overall appearance and setting");
+                promptBuilder.AppendLine("\nFormat: Use short paragraphs. Make it vivid and inspiring but concise.");
 
                 var prompt = promptBuilder.ToString();
 

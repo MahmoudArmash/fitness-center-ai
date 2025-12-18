@@ -170,9 +170,14 @@ namespace FitnessCenter.Controllers
                 // Provide user-friendly error message based on exception type
                 string errorMessage = ex switch
                 {
-                    HttpRequestException httpEx => $"Unable to connect to AI service. Error: {httpEx.Message}. Please check your internet connection and API configuration.",
-                    InvalidOperationException invalidOpEx => $"Configuration error: {invalidOpEx.Message}. Please check appsettings.json.",
-                    _ => $"An error occurred while analyzing the photo: {ex.Message}. Please check the console logs for details."
+                    HttpRequestException httpEx when httpEx.Message.Contains("leaked", StringComparison.OrdinalIgnoreCase) => 
+                        httpEx.Message, // Use the detailed message from AIService about leaked API key
+                    HttpRequestException httpEx => 
+                        $"Unable to connect to AI service. {httpEx.Message} Please check your internet connection and API configuration.",
+                    InvalidOperationException invalidOpEx => 
+                        $"Configuration error: {invalidOpEx.Message}",
+                    _ => 
+                        $"An error occurred while analyzing the photo: {ex.Message} Please check the console logs for details."
                 };
                 
                 ModelState.AddModelError("", errorMessage);

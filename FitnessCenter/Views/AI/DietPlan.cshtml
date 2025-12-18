@@ -71,11 +71,42 @@
                     </div>
 
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-success btn-lg">
-                            <i class="bi bi-apple"></i> Get Diet Plan Recommendations
+                        <button type="submit" class="btn btn-success btn-lg" id="submitBtn">
+                            <span id="submitText">
+                                <i class="bi bi-apple"></i> Get Diet Plan Recommendations
+                            </span>
+                            <span id="submitLoader" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
                         </button>
                     </div>
                 </form>
+
+                <!-- Loading Overlay -->
+                <div id="loadingOverlay" class="d-none position-fixed top-0 start-0 w-100 h-100" style="background-color: rgba(0,0,0,0.5); z-index: 9999;">
+                    <div class="d-flex justify-content-center align-items-center h-100">
+                        <div class="text-center text-white">
+                            <div class="spinner-border text-light mb-3" style="width: 3rem; height: 3rem;" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <h4>Generating your diet plan...</h4>
+                            <p>This may take a few moments</p>
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                    document.querySelector('form').addEventListener('submit', function(e) {
+                        const submitBtn = document.getElementById('submitBtn');
+                        const submitText = document.getElementById('submitText');
+                        const submitLoader = document.getElementById('submitLoader');
+                        const loadingOverlay = document.getElementById('loadingOverlay');
+                        
+                        // Disable button and show loader
+                        submitBtn.disabled = true;
+                        submitText.classList.add('d-none');
+                        submitLoader.classList.remove('d-none');
+                        loadingOverlay.classList.remove('d-none');
+                    });
+                </script>
 
                 <hr class="my-4" />
 

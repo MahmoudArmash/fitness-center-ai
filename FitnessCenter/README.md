@@ -96,6 +96,15 @@ A comprehensive ASP.NET Core MVC application for managing a fitness center with 
    - Add your API key to `GoogleGemini:ApiKey` (not recommended for production)
    
    **Get your API key from [Google AI Studio](https://makersuite.google.com/app/apikey)**
+   
+   **⚠️ Important Security Notes:**
+   - Never commit API keys to version control (Git)
+   - If you see an error "Your API key was reported as leaked", you need to:
+     1. Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
+     2. Delete or revoke the old API key
+     3. Generate a new API key
+     4. Update your environment variable with the new key
+     5. Restart your application
 
 4. **Restore packages and build**
    ```bash
