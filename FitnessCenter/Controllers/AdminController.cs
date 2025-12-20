@@ -199,9 +199,36 @@ namespace FitnessCenter.Controllers
         #endregion
 
         #region Service CRUD
-        public async Task<IActionResult> Services()
+        public async Task<IActionResult> Services(string searchTerm, string serviceType, int? fitnessCenterId)
         {
-            return View(await _context.Services.Include(s => s.FitnessCenter).ToListAsync());
+            var query = _context.Services.Include(s => s.FitnessCenter).AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var searchLower = searchTerm.ToLower();
+                query = query.Where(s => 
+                    s.Name.ToLower().Contains(searchLower) || 
+                    (s.Description != null && s.Description.ToLower().Contains(searchLower)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(serviceType) &&
+                Enum.TryParse<ServiceType>(serviceType, out var parsedServiceType))
+            {
+                query = query.Where(s => s.Type == parsedServiceType);
+            }
+
+            if (fitnessCenterId.HasValue)
+            {
+                query = query.Where(s => s.FitnessCenterId == fitnessCenterId.Value);
+            }
+
+            ViewBag.SearchTerm = searchTerm;
+            ViewBag.ServiceType = serviceType;
+            ViewBag.FitnessCenterId = fitnessCenterId;
+            ViewBag.FitnessCenters = new SelectList(await _context.FitnessCenters.OrderBy(fc => fc.Name).ToListAsync(), "Id", "Name", fitnessCenterId);
+            ViewBag.ServiceTypes = Enum.GetValues(typeof(ServiceType)).Cast<ServiceType>();
+
+            return View(await query.OrderBy(s => s.Name).ToListAsync());
         }
 
         public IActionResult CreateService()
@@ -275,9 +302,30 @@ namespace FitnessCenter.Controllers
         #endregion
 
         #region Trainer CRUD
-        public async Task<IActionResult> Trainers()
+        public async Task<IActionResult> Trainers(string searchTerm, int? fitnessCenterId)
         {
-            return View(await _context.Trainers.Include(t => t.FitnessCenter).ToListAsync());
+            var query = _context.Trainers.Include(t => t.FitnessCenter).AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var searchLower = searchTerm.ToLower();
+                query = query.Where(t => 
+                    t.FirstName.ToLower().Contains(searchLower) || 
+                    t.LastName.ToLower().Contains(searchLower) ||
+                    (t.Email != null && t.Email.ToLower().Contains(searchLower)) ||
+                    (t.Phone != null && t.Phone.Contains(searchTerm))); // Phone numbers usually don't need case-insensitive
+            }
+
+            if (fitnessCenterId.HasValue)
+            {
+                query = query.Where(t => t.FitnessCenterId == fitnessCenterId.Value);
+            }
+
+            ViewBag.SearchTerm = searchTerm;
+            ViewBag.FitnessCenterId = fitnessCenterId;
+            ViewBag.FitnessCenters = new SelectList(await _context.FitnessCenters.OrderBy(fc => fc.Name).ToListAsync(), "Id", "Name", fitnessCenterId);
+
+            return View(await query.OrderBy(t => t.FirstName).ThenBy(t => t.LastName).ToListAsync());
         }
 
         public IActionResult CreateTrainer()
@@ -289,7 +337,7 @@ namespace FitnessCenter.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateTrainer(Trainer trainer, int[] selectedServices)
+        public async Task<IActionResult> CreateTrainer(Trainer trainer, int[] selectedServices, IFormCollection form)
         {
             if (ModelState.IsValid)
             {
@@ -307,9 +355,38 @@ namespace FitnessCenter.Controllers
                             ServiceId = serviceId
                         });
                     }
-                    await _context.SaveChangesAsync();
                 }
 
+                // Add working hours from form collection
+                var daysOfWeek = Enum.GetValues(typeof(DayOfWeek)).Cast<DayOfWeek>();
+                foreach (var day in daysOfWeek)
+                {
+                    var dayIndex = (int)day;
+                    var startTimeKey = $"workingHours[{dayIndex}].StartTime";
+                    var endTimeKey = $"workingHours[{dayIndex}].EndTime";
+                    
+                    if (form.ContainsKey(startTimeKey) && form.ContainsKey(endTimeKey))
+                    {
+                        var startTimeStr = form[startTimeKey].ToString();
+                        var endTimeStr = form[endTimeKey].ToString();
+                        
+                        if (!string.IsNullOrEmpty(startTimeStr) && !string.IsNullOrEmpty(endTimeStr) &&
+                            TimeSpan.TryParse(startTimeStr, out var startTime) &&
+                            TimeSpan.TryParse(endTimeStr, out var endTime))
+                        {
+                            _context.WorkingHours.Add(new WorkingHours
+                            {
+                                TrainerId = trainer.Id,
+                                FitnessCenterId = null,
+                                DayOfWeek = day,
+                                StartTime = startTime,
+                                EndTime = endTime
+                            });
+                        }
+                    }
+                }
+
+                await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Trainers));
             }
             ViewData["FitnessCenterId"] = new SelectList(_context.FitnessCenters, "Id", "Name", trainer.FitnessCenterId);
@@ -322,6 +399,7 @@ namespace FitnessCenter.Controllers
             if (id == null) return NotFound();
             var trainer = await _context.Trainers
                 .Include(t => t.TrainerExpertises)
+                .Include(t => t.WorkingHours)
                 .FirstOrDefaultAsync(t => t.Id == id);
             if (trainer == null) return NotFound();
 
@@ -332,7 +410,7 @@ namespace FitnessCenter.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditTrainer(int id, Trainer trainer, int[] selectedServices)
+        public async Task<IActionResult> EditTrainer(int id, Trainer trainer, int[] selectedServices, IFormCollection form)
         {
             if (id != trainer.Id) return NotFound();
 
@@ -357,6 +435,40 @@ namespace FitnessCenter.Controllers
                                 TrainerId = trainer.Id,
                                 ServiceId = serviceId
                             });
+                        }
+                    }
+
+                    // Update working hours from form collection
+                    var existingWorkingHours = await _context.WorkingHours
+                        .Where(wh => wh.TrainerId == trainer.Id)
+                        .ToListAsync();
+                    _context.WorkingHours.RemoveRange(existingWorkingHours);
+
+                    var daysOfWeek = Enum.GetValues(typeof(DayOfWeek)).Cast<DayOfWeek>();
+                    foreach (var day in daysOfWeek)
+                    {
+                        var dayIndex = (int)day;
+                        var startTimeKey = $"workingHours[{dayIndex}].StartTime";
+                        var endTimeKey = $"workingHours[{dayIndex}].EndTime";
+                        
+                        if (form.ContainsKey(startTimeKey) && form.ContainsKey(endTimeKey))
+                        {
+                            var startTimeStr = form[startTimeKey].ToString();
+                            var endTimeStr = form[endTimeKey].ToString();
+                            
+                            if (!string.IsNullOrEmpty(startTimeStr) && !string.IsNullOrEmpty(endTimeStr) &&
+                                TimeSpan.TryParse(startTimeStr, out var startTime) &&
+                                TimeSpan.TryParse(endTimeStr, out var endTime))
+                            {
+                                _context.WorkingHours.Add(new WorkingHours
+                                {
+                                    TrainerId = trainer.Id,
+                                    FitnessCenterId = null,
+                                    DayOfWeek = day,
+                                    StartTime = startTime,
+                                    EndTime = endTime
+                                });
+                            }
                         }
                     }
 

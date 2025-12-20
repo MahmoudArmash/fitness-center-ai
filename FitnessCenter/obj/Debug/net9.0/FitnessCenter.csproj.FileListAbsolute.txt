@@ -194,7 +194,6 @@ C:\Users\mo3ta\Documents\CsharpFund\fitness-center-ai\FitnessCenter\obj\Debug\ne
 C:\Users\mo3ta\Documents\CsharpFund\fitness-center-ai\FitnessCenter\obj\Debug\net9.0\scopedcss\Views\Shared\_Layout.cshtml.rz.scp.css
 C:\Users\mo3ta\Documents\CsharpFund\fitness-center-ai\FitnessCenter\obj\Debug\net9.0\scopedcss\bundle\FitnessCenter.styles.css
 C:\Users\mo3ta\Documents\CsharpFund\fitness-center-ai\FitnessCenter\obj\Debug\net9.0\scopedcss\projectbundle\FitnessCenter.bundle.scp.css
-C:\Users\mo3ta\Documents\CsharpFund\fitness-center-ai\FitnessCenter\obj\Debug\net9.0\compressed\r7uwovlwbl-9c8c37dxx5.gz
 C:\Users\mo3ta\Documents\CsharpFund\fitness-center-ai\FitnessCenter\obj\Debug\net9.0\compressed\i0d4lg4t12-61n19gt1b8.gz
 C:\Users\mo3ta\Documents\CsharpFund\fitness-center-ai\FitnessCenter\obj\Debug\net9.0\compressed\ltfwwcj8aw-fr7q2aak1r.gz
 C:\Users\mo3ta\Documents\CsharpFund\fitness-center-ai\FitnessCenter\obj\Debug\net9.0\compressed\avsvxs6jgc-bqjiyaj88i.gz
@@ -268,3 +267,5 @@ C:\Users\mo3ta\Documents\CsharpFund\fitness-center-ai\FitnessCenter\obj\Debug\ne
 C:\Users\mo3ta\Documents\CsharpFund\fitness-center-ai\FitnessCenter\obj\Debug\net9.0\FitnessCenter.pdb
 C:\Users\mo3ta\Documents\CsharpFund\fitness-center-ai\FitnessCenter\obj\Debug\net9.0\FitnessCenter.genruntimeconfig.cache
 C:\Users\mo3ta\Documents\CsharpFund\fitness-center-ai\FitnessCenter\obj\Debug\net9.0\ref\FitnessCenter.dll
+C:\Users\mo3ta\Documents\CsharpFund\fitness-center-ai\FitnessCenter\obj\Debug\net9.0\compressed\1k066c8ihw-xz92dwobxd.gz
+C:\Users\mo3ta\Documents\CsharpFund\fitness-center-ai\FitnessCenter\obj\Debug\net9.0\compressed\r7uwovlwbl-xgcjj2z24a.gz

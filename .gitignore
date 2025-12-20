@@ -1,0 +1,50 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.dll
+*.exe
+*.pdb
+*.db
+*.db-shm
+*.db-wal
+
+## Visual Studio
+.vs/
+*.userosscache
+*.sln.docstates
+
+## Cursor IDE
+.cursor/
+
+## Environment variables and secrets
+appsettings.Development.json
+appsettings.Production.json
+Properties/launchSettings.json
+
+## Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+## Uploads
+wwwroot/uploads/
+
+## API Keys (if accidentally added)
+*API_KEY*
+*SECRET*
+*.key
+
+## OS
+.DS_Store
+Thumbs.db

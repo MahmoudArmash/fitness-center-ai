@@ -4,14 +4,101 @@
     ViewData["Title"] = "Manage Trainers";
 }
 
+<div class="row">
+    <div class="col-lg-3 col-md-4 mb-4 mb-md-0">
+        <div class="admin-sidebar">
+            <h5 class="mb-4 fw-bold">
+                <i class="bi bi-shield-check me-2"></i>Admin Panel
+            </h5>
+            <ul class="sidebar-nav">
+                <li class="sidebar-nav-item">
+                    <a class="sidebar-nav-link" asp-action="Index">
+                        <i class="bi bi-speedometer2"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="sidebar-nav-item">
+                    <a class="sidebar-nav-link" asp-action="FitnessCenters">
+                        <i class="bi bi-building"></i>
+                        <span>Fitness Centers</span>
+                    </a>
+                </li>
+                <li class="sidebar-nav-item">
+                    <a class="sidebar-nav-link" asp-action="Services">
+                        <i class="bi bi-list-ul"></i>
+                        <span>Services</span>
+                    </a>
+                </li>
+                <li class="sidebar-nav-item">
+                    <a class="sidebar-nav-link active" asp-action="Trainers">
+                        <i class="bi bi-people"></i>
+                        <span>Trainers</span>
+                    </a>
+                </li>
+                <li class="sidebar-nav-item">
+                    <a class="sidebar-nav-link" asp-controller="Appointment" asp-action="Index">
+                        <i class="bi bi-calendar-check"></i>
+                        <span>Appointments</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="col-lg-9 col-md-8">
+        <div class="py-5">
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Trainers</h2>
-    <a asp-action="CreateTrainer" class="btn btn-primary">Create New Trainer</a>
+                <h2 class="mb-0">
+                    <i class="bi bi-people me-2"></i>Trainers
+                </h2>
+                <a asp-action="CreateTrainer" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i>Create New Trainer
+                </a>
 </div>
 
+            <!-- Search and Filter Section -->
+            <div class="card shadow-modern mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-5">
+                            <div class="form-floating">
+                                <input type="text" name="searchTerm" class="form-control" id="searchTerm" 
+                                       value="@ViewBag.SearchTerm" placeholder="Search trainers...">
+                                <label for="searchTerm"><i class="bi bi-search me-2"></i>Search</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-floating">
+                                <select name="fitnessCenterId" class="form-select" id="fitnessCenterId" asp-items="ViewBag.FitnessCenters">
+                                    <option value="">All Fitness Centers</option>
+                                </select>
+                                <label for="fitnessCenterId">Fitness Center</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary" style="height: 58px;">
+                                    <i class="bi bi-funnel me-1"></i>Filter
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    @if (!string.IsNullOrWhiteSpace(ViewBag.SearchTerm as string) || ViewBag.FitnessCenterId != null)
+                    {
+                        <div class="mt-3">
+                            <a href="@Url.Action("Trainers")" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Clear Filters
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="card shadow-modern">
+                <div class="card-body">
 <div class="table-responsive">
-    <table class="table table-striped table-hover">
-        <thead class="table-dark">
+                        <table class="table">
+                            <thead>
             <tr>
                 <th>Name</th>
                 <th>Email</th>
@@ -24,23 +111,34 @@
             @foreach (var trainer in Model)
             {
                 <tr>
-                    <td>@trainer.FullName</td>
+                                        <td>
+                                            <i class="bi bi-person-badge me-2 text-primary"></i>
+                                            <strong>@trainer.FullName</strong>
+                                        </td>
                     <td>@trainer.Email</td>
                     <td>@trainer.Phone</td>
                     <td>@trainer.FitnessCenter.Name</td>
                     <td>
-                        <a asp-action="EditTrainer" asp-route-id="@trainer.Id" class="btn btn-sm btn-warning">Edit</a>
+                                            <div class="d-flex gap-2">
+                                                <a asp-action="EditTrainer" asp-route-id="@trainer.Id" class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-pencil me-1"></i>Edit
+                                                </a>
                         <form id="deleteForm_@trainer.Id" asp-action="DeleteTrainer" method="post" class="d-inline">
                             <input type="hidden" name="id" value="@trainer.Id" />
-                            <button type="button" class="btn btn-sm btn-danger" 
+                                                    <button type="button" class="btn btn-sm btn-outline-danger" 
                                     onclick="showDeleteModal('deleteForm_@trainer.Id', '@Url.Action("DeleteTrainer", "Admin")', 'Are you sure you want to delete this trainer?', '@trainer.FullName')">
-                                Delete
+                                                        <i class="bi bi-trash me-1"></i>Delete
                             </button>
                         </form>
+                                            </div>
                     </td>
                 </tr>
             }
         </tbody>
     </table>
 </div>
-
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

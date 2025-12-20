@@ -26,11 +26,12 @@ namespace FitnessCenter.Controllers
                 .Include(s => s.FitnessCenter)
                 .AsQueryable();
 
-            // Apply LINQ Where filters
+            // Apply LINQ Where filters (case-insensitive)
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                query = query.Where(s => s.Name.Contains(searchTerm) || 
-                                        (s.Description != null && s.Description.Contains(searchTerm)));
+                var searchLower = searchTerm.ToLower();
+                query = query.Where(s => s.Name.ToLower().Contains(searchLower) || 
+                                        (s.Description != null && s.Description.ToLower().Contains(searchLower)));
             }
 
             if (!string.IsNullOrWhiteSpace(serviceType) &&

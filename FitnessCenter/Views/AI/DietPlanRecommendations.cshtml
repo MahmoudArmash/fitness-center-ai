@@ -2,64 +2,70 @@
     ViewData["Title"] = "Diet Plan Recommendations";
 }
 
-<div class="row">
-    <div class="col-md-10 offset-md-1">
-        @if (ViewBag.Success == true)
-        {
-            <div class="card shadow mb-4">
-                <div class="card-header bg-success text-white">
-                    <h3 class="card-title mb-0">Your Personalized Diet Plan</h3>
-                </div>
-                <div class="card-body">
-                    @if (ViewBag.Height != null || ViewBag.Weight != null)
-                    {
-                        <div class="alert alert-info">
-                            <strong>Based on:</strong>
-                            @if (ViewBag.Height != null)
-                            {
-                                <span>Height: @ViewBag.Height cm</span>
-                            }
-                            @if (ViewBag.Weight != null)
-                            {
-                                <span> | Weight: @ViewBag.Weight kg</span>
-                            }
-                            @if (!string.IsNullOrEmpty(ViewBag.Gender))
-                            {
-                                <span> | Gender: @ViewBag.Gender</span>
-                            }
-                            @if (!string.IsNullOrEmpty(ViewBag.FitnessGoal))
-                            {
-                                <span> | Goal: @ViewBag.FitnessGoal</span>
-                            }
-                        </div>
-                    }
+<div class="py-5">
+    <div class="row">
+        <div class="col-lg-10 offset-lg-1">
+            @if (ViewBag.Success == true)
+            {
+                <div class="card shadow-modern mb-4">
+                    <div class="card-header">
+                        <h3 class="card-title mb-0">
+                            <i class="bi bi-apple me-2"></i>Your Personalized Diet Plan
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        @if (ViewBag.Height != null || ViewBag.Weight != null)
+                        {
+                            <div class="alert alert-info mb-4">
+                                <strong>
+                                    <i class="bi bi-info-circle me-2"></i>Based on:
+                                </strong>
+                                @if (ViewBag.Height != null)
+                                {
+                                    <span>Height: @ViewBag.Height cm</span>
+                                }
+                                @if (ViewBag.Weight != null)
+                                {
+                                    <span> | Weight: @ViewBag.Weight kg</span>
+                                }
+                                @if (!string.IsNullOrEmpty(ViewBag.Gender))
+                                {
+                                    <span> | Gender: @ViewBag.Gender</span>
+                                }
+                                @if (!string.IsNullOrEmpty(ViewBag.FitnessGoal))
+                                {
+                                    <span> | Goal: @ViewBag.FitnessGoal</span>
+                                }
+                            </div>
+                        }
 
-                    <h4>Nutrition Plan</h4>
-                    <div class="diet-plan">
-                        @Html.Raw(ViewBag.DietPlan?.Replace("\n", "<br/>"))
+                        <h4 class="mb-4">
+                            <i class="bi bi-heart-pulse me-2 text-primary"></i>Nutrition Plan
+                        </h4>
+                        <div class="diet-plan p-4 bg-light rounded" style="line-height: 1.8; white-space: pre-wrap;">
+                            @Html.Raw(ViewBag.DietPlan?.Replace("\n", "<br/>"))
+                        </div>
                     </div>
                 </div>
-            </div>
-        }
-        else
-        {
-            <div class="alert alert-danger">
-                <h4>Error</h4>
-                <p>Unable to generate diet plan recommendations. Please try again.</p>
-            </div>
-        }
+            }
+            else
+            {
+                <div class="alert alert-danger shadow-modern">
+                    <h4>
+                        <i class="bi bi-exclamation-triangle me-2"></i>Error
+                    </h4>
+                    <p>Unable to generate diet plan recommendations. Please try again.</p>
+                </div>
+            }
 
-        <div class="text-center">
-            <a asp-action="DietPlan" class="btn btn-primary">Get Another Diet Plan</a>
-            <a asp-action="Index" class="btn btn-outline-secondary">Back to Exercise Recommendations</a>
+            <div class="text-center d-flex flex-column flex-md-row gap-3 justify-content-center">
+                <a asp-action="DietPlan" class="btn btn-primary btn-lg">
+                    <i class="bi bi-arrow-left me-2"></i>Get Another Diet Plan
+                </a>
+                <a asp-action="Index" class="btn btn-outline-secondary btn-lg">
+                    <i class="bi bi-arrow-left me-2"></i>Back to Exercise Recommendations
+                </a>
+            </div>
         </div>
     </div>
 </div>
-
-<style>
-    .diet-plan {
-        line-height: 1.8;
-        white-space: pre-wrap;
-    }
-</style>
-

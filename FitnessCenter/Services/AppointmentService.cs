@@ -10,6 +10,7 @@ namespace FitnessCenter.Services
         Task<bool> IsTrainerAvailableAsync(int trainerId, DateTime appointmentDateTime, int durationMinutes, int? excludeAppointmentId = null);
         Task<bool> HasConflictAsync(int trainerId, DateTime appointmentDateTime, int durationMinutes, int? excludeAppointmentId = null);
         Task<List<Trainer>> GetAvailableTrainersAsync(DateTime date, int serviceId);
+        Task<List<TimeSpan>> GetAvailableTimeSlotsAsync(int trainerId, DateTime date, int durationMinutes);
     }
 
     public class AppointmentService : IAppointmentService
@@ -107,6 +108,73 @@ namespace FitnessCenter.Services
                 .ToList();
 
             return availableTrainers;
+        }
+
+        public async Task<List<TimeSpan>> GetAvailableTimeSlotsAsync(int trainerId, DateTime date, int durationMinutes)
+        {
+            var dayOfWeek = date.DayOfWeek;
+            
+            // Get working hours for this trainer on this day
+            var workingHours = await _context.WorkingHours
+                .Where(wh => wh.TrainerId == trainerId && wh.DayOfWeek == dayOfWeek)
+                .FirstOrDefaultAsync();
+
+            if (workingHours == null)
+            {
+                // Log for debugging
+                var allWorkingHours = await _context.WorkingHours
+                    .Where(wh => wh.TrainerId == trainerId)
+                    .ToListAsync();
+                return new List<TimeSpan>();
+            }
+
+            var availableSlots = new List<TimeSpan>();
+            var slotDuration = TimeSpan.FromMinutes(durationMinutes);
+            var currentTime = workingHours.StartTime;
+            var now = DateTime.Now;
+            var isToday = date.Date == now.Date;
+
+            // Get existing appointments for this trainer on this date
+            var existingAppointments = await _context.Appointments
+                .Where(a => a.TrainerId == trainerId &&
+                           a.AppointmentDateTime.Date == date.Date &&
+                           a.Status != AppointmentStatus.Cancelled)
+                .ToListAsync();
+
+            while (currentTime.Add(slotDuration) <= workingHours.EndTime)
+            {
+                var appointmentDateTime = date.Date.Add(currentTime);
+
+                // Check if this slot conflicts with any existing appointment
+                var hasConflict = existingAppointments.Any(a =>
+                {
+                    var appointmentEnd = a.AppointmentDateTime.AddMinutes(a.DurationMinutes);
+                    return appointmentDateTime < appointmentEnd &&
+                           appointmentDateTime.AddMinutes(durationMinutes) > a.AppointmentDateTime;
+                });
+
+                // For future dates, all slots are available. For today, only future times.
+                var isAvailable = !hasConflict;
+                if (isToday)
+                {
+                    isAvailable = isAvailable && appointmentDateTime > now;
+                }
+                else if (date.Date < now.Date)
+                {
+                    // Past dates are not available
+                    isAvailable = false;
+                }
+
+                if (isAvailable)
+                {
+                    availableSlots.Add(currentTime);
+                }
+
+                // Move to next slot (30-minute intervals)
+                currentTime = currentTime.Add(TimeSpan.FromMinutes(30));
+            }
+
+            return availableSlots;
         }
     }
 }

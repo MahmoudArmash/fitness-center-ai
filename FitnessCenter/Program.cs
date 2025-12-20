@@ -15,7 +15,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddIdentity<Member, IdentityRole>(options =>
 {
-    // Password settings
+    // Password settings - Normal requirements for regular users
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = true;
     options.Password.RequireUppercase = true;
@@ -27,7 +27,8 @@ builder.Services.AddIdentity<Member, IdentityRole>(options =>
     options.SignIn.RequireConfirmedEmail = false;
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
-.AddDefaultTokenProviders();
+.AddDefaultTokenProviders()
+.AddPasswordValidator<AdminPasswordValidator>();
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -41,6 +42,8 @@ builder.Services.AddHttpClient();
 
 // Register services
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
+builder.Services.AddScoped<IFileValidationService, FileValidationService>();
+builder.Services.AddScoped<IGeminiApiClient, GeminiApiClient>();
 builder.Services.AddScoped<IAIService, AIService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 

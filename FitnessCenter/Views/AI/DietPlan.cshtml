@@ -1,24 +1,29 @@
 @{
     ViewData["Title"] = "AI Diet Plan Recommendations";
 }
-
+<div class="py-5">
 <div class="row">
-    <div class="col-md-8 offset-md-2">
-        <div class="card shadow">
-            <div class="card-header bg-success text-white">
-                <h3 class="card-title mb-0">AI-Powered Diet Plan Recommendations</h3>
+    <div class="col-lg-8 offset-lg-2">
+        <div class="card shadow-modern">
+            <div class="card-header">
+                <h3 class="card-title mb-0">
+                    <i class="bi bi-apple me-2"></i>AI-Powered Diet Plan Recommendations
+                </h3>
             </div>
             <div class="card-body">
-                <p class="lead">Get personalized diet and nutrition plan recommendations based on your body metrics and fitness goals.</p>
+                <p class="lead mb-4">Get personalized diet and nutrition plan recommendations based on your body metrics and fitness goals.</p>
                 
-                <form asp-action="GetDietPlan" method="post">
+                <form asp-action="GetDietPlan" method="post" data-validate>
                     @Html.AntiForgeryToken()
-                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div asp-validation-summary="All" class="alert alert-danger mb-4"></div>
+                    }
 
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input type="hidden" name="useProfileMetrics" value="false" />
+                    <div class="mb-4">
+                        <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" name="useProfileMetrics" id="useProfileMetrics" value="true" checked />
+                            <input type="hidden" name="useProfileMetrics" value="false" />
                             <label class="form-check-label" for="useProfileMetrics">
                                 Use my profile information (if available)
                             </label>
@@ -27,37 +32,45 @@
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="height" class="form-label">Height (cm) <span class="text-danger">*</span></label>
+                            <div class="form-floating">
                             <input type="number" name="height" id="height" class="form-control" step="0.1" min="0" value="@ViewBag.UserHeight" required />
+                                <label for="height">Height (cm) <span class="text-danger">*</span></label>
+                            </div>
                             <div class="form-text">Your profile: @(ViewBag.UserHeight != null ? ViewBag.UserHeight + " cm" : "Not set")</div>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="weight" class="form-label">Weight (kg) <span class="text-danger">*</span></label>
+                            <div class="form-floating">
                             <input type="number" name="weight" id="weight" class="form-control" step="0.1" min="0" value="@ViewBag.UserWeight" required />
+                                <label for="weight">Weight (kg) <span class="text-danger">*</span></label>
+                            </div>
                             <div class="form-text">Your profile: @(ViewBag.UserWeight != null ? ViewBag.UserWeight + " kg" : "Not set")</div>
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="gender" class="form-label">Gender</label>
+                            <div class="form-floating">
                             <select name="gender" id="gender" class="form-select">
                                 <option value="">Select...</option>
                                 <option value="Male" selected="@(ViewBag.UserGender == "Male")">Male</option>
                                 <option value="Female" selected="@(ViewBag.UserGender == "Female")">Female</option>
                                 <option value="Other" selected="@(ViewBag.UserGender == "Other")">Other</option>
                             </select>
+                                <label for="gender">Gender</label>
+                            </div>
                             <div class="form-text">Your profile: @(ViewBag.UserGender ?? "Not set")</div>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="dateOfBirth" class="form-label">Date of Birth</label>
+                            <div class="form-floating">
                             <input type="date" name="dateOfBirth" id="dateOfBirth" class="form-control" value="@(ViewBag.UserDateOfBirth?.ToString("yyyy-MM-dd"))" />
+                                <label for="dateOfBirth">Date of Birth</label>
+                            </div>
                             <div class="form-text">Your profile: @(ViewBag.UserDateOfBirth?.ToString("MM/dd/yyyy") ?? "Not set")</div>
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="fitnessGoal" class="form-label">Fitness Goal (Optional)</label>
+                    <div class="mb-4">
+                        <div class="form-floating">
                         <select name="fitnessGoal" id="fitnessGoal" class="form-select">
                             <option value="">Select a goal...</option>
                             <option value="Weight Loss">Weight Loss</option>
@@ -67,13 +80,15 @@
                             <option value="Athletic Performance">Athletic Performance</option>
                             <option value="General Health">General Health</option>
                         </select>
+                            <label for="fitnessGoal">Fitness Goal (Optional)</label>
+                        </div>
                         <div class="form-text">Select your primary fitness goal for more targeted recommendations</div>
                     </div>
 
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-success btn-lg" id="submitBtn">
+                        <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
                             <span id="submitText">
-                                <i class="bi bi-apple"></i> Get Diet Plan Recommendations
+                                <i class="bi bi-apple me-2"></i>Get Diet Plan Recommendations
                             </span>
                             <span id="submitLoader" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
                         </button>
@@ -111,13 +126,13 @@
                 <hr class="my-4" />
 
                 <div class="text-center">
-                    <p>Want exercise recommendations based on a photo?</p>
-                    <a asp-action="Index" class="btn btn-outline-info">
-                        <i class="bi bi-camera"></i> Get Exercise Recommendations
+                    <p class="mb-3">Want exercise recommendations based on a photo?</p>
+                    <a asp-action="Index" class="btn btn-outline-primary">
+                        <i class="bi bi-camera me-2"></i>Get Exercise Recommendations
                     </a>
                 </div>
             </div>
         </div>
     </div>
 </div>
-
+</div>

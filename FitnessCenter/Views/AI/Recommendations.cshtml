@@ -2,39 +2,48 @@
     ViewData["Title"] = "Exercise Recommendations";
 }
 
-<div class="row">
-    <div class="col-md-8 offset-md-2">
-        @if (ViewBag.Success == true)
-        {
-            <div class="card shadow mb-4">
-                <div class="card-header bg-success text-white">
-                    <h3 class="card-title mb-0">Analysis Complete</h3>
-                </div>
-                <div class="card-body">
-                    @if (!string.IsNullOrEmpty(ViewBag.PhotoPath))
-                    {
-                        <div class="text-center mb-4">
-                            <img src="@ViewBag.PhotoPath" alt="Uploaded Photo" class="img-fluid rounded" style="max-height: 400px;" />
+<div class="py-5">
+    <div class="row">
+        <div class="col-lg-10 offset-lg-1">
+            @if (ViewBag.Success == true)
+            {
+                <div class="card shadow-modern mb-4">
+                    <div class="card-header">
+                        <h3 class="card-title mb-0">
+                            <i class="bi bi-check-circle me-2 text-success"></i>Analysis Complete
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        @if (!string.IsNullOrEmpty(ViewBag.PhotoPath))
+                        {
+                            <div class="text-center mb-4">
+                                <img src="@ViewBag.PhotoPath" alt="Uploaded Photo" class="img-fluid rounded" style="max-height: 400px; border-radius: var(--border-radius);" />
+                            </div>
+                        }
+                        <h4 class="mb-4">
+                            <i class="bi bi-lightbulb me-2 text-primary"></i>Personalized Recommendations
+                        </h4>
+                        <div class="recommendations p-4 bg-light rounded" style="line-height: 1.8;">
+                            @Html.Raw(ViewBag.Recommendations?.Replace("\n", "<br/>"))
                         </div>
-                    }
-                    <h4>Personalized Recommendations</h4>
-                    <div class="recommendations">
-                        @Html.Raw(ViewBag.Recommendations?.Replace("\n", "<br/>"))
                     </div>
                 </div>
-            </div>
-        }
-        else
-        {
-            <div class="alert alert-danger">
-                <h4>Error</h4>
-                <p>Unable to generate recommendations. Please try again.</p>
-            </div>
-        }
+            }
+            else
+            {
+                <div class="alert alert-danger shadow-modern">
+                    <h4>
+                        <i class="bi bi-exclamation-triangle me-2"></i>Error
+                    </h4>
+                    <p>Unable to generate recommendations. Please try again.</p>
+                </div>
+            }
 
-        <div class="text-center">
-            <a asp-action="Index" class="btn btn-primary">Analyze Another Photo</a>
+            <div class="text-center">
+                <a asp-action="Index" class="btn btn-primary btn-lg">
+                    <i class="bi bi-arrow-left me-2"></i>Analyze Another Photo
+                </a>
+            </div>
         </div>
     </div>
 </div>
-

@@ -4,55 +4,104 @@
     ViewData["Title"] = "Service Details";
 }
 
+<div class="py-5">
 <div class="row">
-    <div class="col-md-8 offset-md-2">
-        <div class="card shadow">
-            <div class="card-header bg-primary text-white">
-                <h3 class="card-title mb-0">@Model.Name</h3>
+        <div class="col-lg-8 offset-lg-2">
+            <div class="card shadow-modern">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">
+                        <i class="bi bi-heart-pulse me-2"></i>@Model.Name
+                    </h3>
             </div>
             <div class="card-body">
-                <dl class="row">
-                    <dt class="col-sm-3">Type:</dt>
-                    <dd class="col-sm-9">@Model.Type</dd>
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="bi bi-tag-fill me-3" style="font-size: 1.5rem; color: var(--primary-color);"></i>
+                                <div>
+                                    <small class="text-muted d-block">Type</small>
+                                    <strong>@Model.Type</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="bi bi-clock-fill me-3" style="font-size: 1.5rem; color: var(--primary-color);"></i>
+                                <div>
+                                    <small class="text-muted d-block">Duration</small>
+                                    <strong>@Model.DurationMinutes minutes</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="bi bi-currency-dollar me-3" style="font-size: 1.5rem; color: var(--accent-color);"></i>
+                                <div>
+                                    <small class="text-muted d-block">Price</small>
+                                    <strong class="text-primary" style="font-size: 1.25rem;">$@Model.Price.ToString("F2")</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="bi bi-building me-3" style="font-size: 1.5rem; color: var(--primary-color);"></i>
+                                <div>
+                                    <small class="text-muted d-block">Fitness Center</small>
+                                    <strong>@Model.FitnessCenter.Name</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                    <dt class="col-sm-3">Description:</dt>
-                    <dd class="col-sm-9">@Model.Description</dd>
-
-                    <dt class="col-sm-3">Duration:</dt>
-                    <dd class="col-sm-9">@Model.DurationMinutes minutes</dd>
-
-                    <dt class="col-sm-3">Price:</dt>
-                    <dd class="col-sm-9">$@Model.Price.ToString("F2")</dd>
-
-                    <dt class="col-sm-3">Fitness Center:</dt>
-                    <dd class="col-sm-9">@Model.FitnessCenter.Name</dd>
-                </dl>
+                    <div class="mb-4">
+                        <h5 class="mb-3">
+                            <i class="bi bi-file-text me-2"></i>Description
+                        </h5>
+                        <p class="text-muted">@Model.Description</p>
+                    </div>
 
                 @if (Model.TrainerExpertises.Any())
                 {
-                    <h5 class="mt-4">Available Trainers</h5>
-                    <ul class="list-group">
+                        <div class="mb-4">
+                            <h5 class="mb-3">
+                                <i class="bi bi-people me-2"></i>Available Trainers
+                            </h5>
+                            <div class="row g-3">
                         @foreach (var expertise in Model.TrainerExpertises)
                         {
-                            <li class="list-group-item">
-                                <strong>@expertise.Trainer.FullName</strong>
+                                    <div class="col-md-6">
+                                        <div class="card border">
+                                            <div class="card-body">
+                                                <h6 class="card-title mb-2">
+                                                    <i class="bi bi-person-badge me-2 text-primary"></i>
+                                                    @expertise.Trainer.FullName
+                                                </h6>
                                 @if (!string.IsNullOrEmpty(expertise.Trainer.Bio))
                                 {
-                                    <br /><small class="text-muted">@expertise.Trainer.Bio</small>
+                                                    <p class="card-text text-muted small mb-0">@expertise.Trainer.Bio</p>
                                 }
-                            </li>
+                                            </div>
+                                        </div>
+                                    </div>
                         }
-                    </ul>
+                            </div>
+                        </div>
                 }
             </div>
-            <div class="card-footer">
-                <a asp-action="Index" class="btn btn-secondary">Back to Services</a>
+                <div class="card-footer bg-transparent border-0">
+                    <div class="d-flex gap-2">
+                        <a asp-action="Index" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>Back to Services
+                        </a>
                 @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Member"))
                 {
-                    <a asp-controller="Appointment" asp-action="Create" class="btn btn-primary">Book Appointment</a>
+                            <a asp-controller="Appointment" asp-action="Create" class="btn btn-primary ms-auto">
+                                <i class="bi bi-calendar-plus me-2"></i>Book Appointment
+                            </a>
                 }
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
-

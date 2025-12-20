@@ -2,58 +2,206 @@
     ViewData["Title"] = "Admin Dashboard";
 }
 
-<h2 class="mb-4">Admin Dashboard</h2>
+<div class="row">
+    <!-- Sidebar -->
+    <div class="col-lg-3 col-md-4 mb-4 mb-md-0">
+        <div class="admin-sidebar">
+            <h5 class="mb-4 fw-bold">
+                <i class="bi bi-shield-check me-2"></i>Admin Panel
+            </h5>
+            <ul class="sidebar-nav">
+                <li class="sidebar-nav-item">
+                    <a class="sidebar-nav-link active" asp-action="Index">
+                        <i class="bi bi-speedometer2"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="sidebar-nav-item">
+                    <a class="sidebar-nav-link" asp-action="FitnessCenters">
+                        <i class="bi bi-building"></i>
+                        <span>Fitness Centers</span>
+                    </a>
+                </li>
+                <li class="sidebar-nav-item">
+                    <a class="sidebar-nav-link" asp-action="Services">
+                        <i class="bi bi-list-ul"></i>
+                        <span>Services</span>
+                    </a>
+                </li>
+                <li class="sidebar-nav-item">
+                    <a class="sidebar-nav-link" asp-action="Trainers">
+                        <i class="bi bi-people"></i>
+                        <span>Trainers</span>
+                    </a>
+                </li>
+                <li class="sidebar-nav-item">
+                    <a class="sidebar-nav-link" asp-controller="Appointment" asp-action="Index">
+                        <i class="bi bi-calendar-check"></i>
+                        <span>Appointments</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
 
-<div class="row g-4">
-    <div class="col-md-3">
-        <div class="card text-white bg-primary">
-            <div class="card-body">
-                <h5 class="card-title">Total Members</h5>
-                <h2 class="mb-0">@ViewBag.TotalMembers</h2>
-            </div>
+    <!-- Main Content -->
+    <div class="col-lg-9 col-md-8">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0">
+                <i class="bi bi-speedometer2 me-2"></i>Dashboard Overview
+            </h2>
         </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-success">
-            <div class="card-body">
-                <h5 class="card-title">Total Trainers</h5>
-                <h2 class="mb-0">@ViewBag.TotalTrainers</h2>
+
+        <!-- Statistics Cards -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-6 col-lg-3">
+                <div class="stat-card">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <i class="bi bi-people" style="font-size: 2rem; color: var(--primary);"></i>
+                        <span class="badge bg-primary">Members</span>
+                    </div>
+                    <div class="stat-value">@ViewBag.TotalMembers</div>
+                    <div class="stat-label">Total Members</div>
+                </div>
             </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="stat-card">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <i class="bi bi-person-badge" style="font-size: 2rem; color: var(--accent);"></i>
+                        <span class="badge bg-accent">Trainers</span>
         </div>
+                    <div class="stat-value">@ViewBag.TotalTrainers</div>
+                    <div class="stat-label">Total Trainers</div>
     </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-info">
-            <div class="card-body">
-                <h5 class="card-title">Total Appointments</h5>
-                <h2 class="mb-0">@ViewBag.TotalAppointments</h2>
             </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="stat-card">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <i class="bi bi-calendar-check" style="font-size: 2rem; color: var(--primary);"></i>
+                        <span class="badge bg-info">Appointments</span>
         </div>
+                    <div class="stat-value">@ViewBag.TotalAppointments</div>
+                    <div class="stat-label">Total Appointments</div>
     </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-warning">
-            <div class="card-body">
-                <h5 class="card-title">Pending Appointments</h5>
-                <h2 class="mb-0">@ViewBag.PendingAppointments</h2>
             </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="stat-card">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <i class="bi bi-clock-history" style="font-size: 2rem; color: var(--accent);"></i>
+                        <span class="badge bg-warning">Pending</span>
+                    </div>
+                    <div class="stat-value">@ViewBag.PendingAppointments</div>
+                    <div class="stat-label">Pending Appointments</div>
         </div>
     </div>
 </div>
 
-<div class="row mt-4">
-    <div class="col-md-12">
-        <div class="card shadow">
-            <div class="card-header bg-dark text-white">
-                <h5 class="card-title mb-0">Quick Actions</h5>
+        <!-- Quick Actions -->
+        <div class="card shadow-modern mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-lightning-charge me-2"></i>Quick Actions
+                </h5>
             </div>
             <div class="card-body">
-                <div class="d-grid gap-2 d-md-flex">
-                    <a asp-action="FitnessCenters" class="btn btn-primary">Manage Fitness Centers</a>
-                    <a asp-action="Services" class="btn btn-success">Manage Services</a>
-                    <a asp-action="Trainers" class="btn btn-info">Manage Trainers</a>
-                    <a asp-controller="Appointment" asp-action="Index" class="btn btn-warning">View Appointments</a>
+                <div class="row g-3">
+                    <div class="col-md-6 col-lg-3">
+                        <a asp-action="FitnessCenters" class="btn btn-outline-primary w-100 d-flex flex-column align-items-center py-3">
+                            <i class="bi bi-building" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+                            <span>Fitness Centers</span>
+                        </a>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <a asp-action="Services" class="btn btn-outline-primary w-100 d-flex flex-column align-items-center py-3">
+                            <i class="bi bi-list-ul" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+                            <span>Services</span>
+                        </a>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <a asp-action="Trainers" class="btn btn-outline-primary w-100 d-flex flex-column align-items-center py-3">
+                            <i class="bi bi-people" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+                            <span>Trainers</span>
+                        </a>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <a asp-controller="Appointment" asp-action="Index" class="btn btn-outline-primary w-100 d-flex flex-column align-items-center py-3">
+                            <i class="bi bi-calendar-check" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+                            <span>Appointments</span>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <!-- Additional Stats (if available) -->
+        @if (ViewBag.Statistics != null)
+        {
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="card shadow-modern">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-graph-up me-2"></i>Revenue Overview
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            @if (ViewBag.Statistics.AppointmentStats != null)
+                            {
+                                var stats = ViewBag.Statistics.AppointmentStats;
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="text-muted">Total Revenue</span>
+                                        <strong class="text-primary">$@(stats.TotalRevenue?.ToString("F2") ?? "0.00")</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="text-muted">Average Price</span>
+                                        <strong>$@(stats.AverageAppointmentPrice?.ToString("F2") ?? "0.00")</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-muted">Completed</span>
+                                        <span class="badge bg-success">@(stats.Completed ?? 0)</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card shadow-modern">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-pie-chart me-2"></i>Service Statistics
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            @if (ViewBag.Statistics.ServiceStats != null)
+                            {
+                                var stats = ViewBag.Statistics.ServiceStats;
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="text-muted">Average Service Price</span>
+                                        <strong class="text-primary">$@(stats.AveragePrice?.ToString("F2") ?? "0.00")</strong>
+                                    </div>
+                                    @if (stats.MostPopularService != null)
+                                    {
+                                        <div class="d-flex justify-content-between">
+                                            <span class="text-muted">Most Popular</span>
+                                            <strong>@stats.MostPopularService.ServiceName</strong>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
     </div>
 </div>
 
+<style>
+    .badge.bg-accent {
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%) !important;
+        color: white;
+    }
+</style>

@@ -1,12 +1,12 @@
 using FitnessCenter.Data;
 using FitnessCenter.Models;
 using FitnessCenter.Services;
+using FitnessCenter.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 
 namespace FitnessCenter.Controllers
@@ -78,18 +78,19 @@ namespace FitnessCenter.Controllers
                 };
             }
 
-            // Apply search term using LINQ
+            // Apply search term using LINQ (case-insensitive)
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
+                var searchLower = searchTerm.ToLower();
                 query = query.Where(a => 
                     (a.Member != null && 
-                     ((a.Member!.FirstName != null && a.Member.FirstName.Contains(searchTerm)) || 
-                      (a.Member!.LastName != null && a.Member.LastName.Contains(searchTerm)))) ||
+                     ((a.Member!.FirstName != null && a.Member.FirstName.ToLower().Contains(searchLower)) || 
+                      (a.Member!.LastName != null && a.Member.LastName.ToLower().Contains(searchLower)))) ||
                     (a.Trainer != null && 
-                     (a.Trainer.FirstName.Contains(searchTerm) || 
-                      a.Trainer.LastName.Contains(searchTerm))) ||
-                    (a.Service != null && a.Service.Name.Contains(searchTerm)) ||
-                    (a.Notes != null && a.Notes.Contains(searchTerm)));
+                     (a.Trainer.FirstName.ToLower().Contains(searchLower) || 
+                      a.Trainer.LastName.ToLower().Contains(searchLower))) ||
+                    (a.Service != null && a.Service.Name.ToLower().Contains(searchLower)) ||
+                    (a.Notes != null && a.Notes.ToLower().Contains(searchLower)));
             }
 
             // Order by date descending using LINQ
@@ -139,28 +140,78 @@ namespace FitnessCenter.Controllers
             return View(appointments);
         }
 
-        [Authorize(Roles = "Member")]
-        public IActionResult Create()
+        [Authorize(Roles = "Member,Admin")]
+        public async Task<IActionResult> Create(string? memberId = null)
         {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return NotFound();
+
+            var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
+            
             ViewData["ServiceId"] = new SelectList(_context.Services, "Id", "Name");
+            
+            // If admin, allow selecting a member
+            if (isAdmin)
+            {
+                var members = await _context.Users
+                    .Where(u => u.Email != null)
+                    .OrderBy(u => u.FirstName)
+                    .ThenBy(u => u.LastName)
+                    .Select(u => new { u.Id, FullName = u.FullName, u.Email })
+                    .ToListAsync();
+                
+                ViewData["MemberId"] = new SelectList(members, "Id", "FullName", memberId);
+                ViewBag.IsAdmin = true;
+                ViewBag.SelectedMemberId = memberId;
+            }
+            else
+            {
+                ViewBag.IsAdmin = false;
+            }
+            
             return View();
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Member")]
-        public async Task<IActionResult> Create(CreateAppointmentViewModel model)
+        [Authorize(Roles = "Member,Admin")]
+        public async Task<IActionResult> Create(CreateAppointmentViewModel model, string? selectedMemberId = null)
         {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return NotFound();
+
+            var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
+            string targetMemberId;
+
+            // Determine which member to use
+            if (isAdmin && !string.IsNullOrEmpty(selectedMemberId))
+            {
+                // Admin creating for another user
+                targetMemberId = selectedMemberId;
+            }
+            else
+            {
+                // Regular user or admin creating for themselves
+                targetMemberId = user.Id;
+            }
+
             if (ModelState.IsValid)
             {
-                var user = await _userManager.GetUserAsync(User);
-                if (user == null) return NotFound();
-
                 var service = await _context.Services.FindAsync(model.ServiceId);
                 if (service == null)
                 {
                     ModelState.AddModelError("ServiceId", "Service not found.");
                     ViewData["ServiceId"] = new SelectList(_context.Services, "Id", "Name", model.ServiceId);
+                    if (isAdmin)
+                    {
+                        var members = await _context.Users
+                            .Where(u => u.Email != null)
+                            .OrderBy(u => u.FirstName)
+                            .ThenBy(u => u.LastName)
+                            .Select(u => new { u.Id, FullName = u.FullName, u.Email })
+                            .ToListAsync();
+                        ViewData["MemberId"] = new SelectList(members, "Id", "FullName", selectedMemberId);
+                    }
                     return View(model);
                 }
 
@@ -171,18 +222,46 @@ namespace FitnessCenter.Controllers
                     ModelState.AddModelError("", "The selected trainer is not available at this time.");
                     ViewData["ServiceId"] = new SelectList(_context.Services, "Id", "Name", model.ServiceId);
                     ViewData["TrainerId"] = new SelectList(await _appointmentService.GetAvailableTrainersAsync(model.AppointmentDateTime, model.ServiceId), "Id", "FullName", model.TrainerId);
+                    if (isAdmin)
+                    {
+                        var members = await _context.Users
+                            .Where(u => u.Email != null)
+                            .OrderBy(u => u.FirstName)
+                            .ThenBy(u => u.LastName)
+                            .Select(u => new { u.Id, FullName = u.FullName, u.Email })
+                            .ToListAsync();
+                        ViewData["MemberId"] = new SelectList(members, "Id", "FullName", selectedMemberId);
+                    }
+                    return View(model);
+                }
+
+                var targetMember = await _context.Users.FindAsync(targetMemberId);
+                if (targetMember == null)
+                {
+                    ModelState.AddModelError("", "Selected member not found.");
+                    ViewData["ServiceId"] = new SelectList(_context.Services, "Id", "Name", model.ServiceId);
+                    if (isAdmin)
+                    {
+                        var members = await _context.Users
+                            .Where(u => u.Email != null)
+                            .OrderBy(u => u.FirstName)
+                            .ThenBy(u => u.LastName)
+                            .Select(u => new { u.Id, FullName = u.FullName, u.Email })
+                            .ToListAsync();
+                        ViewData["MemberId"] = new SelectList(members, "Id", "FullName", selectedMemberId);
+                    }
                     return View(model);
                 }
 
                 var appointment = new Appointment
                 {
-                    MemberId = user.Id,
+                    MemberId = targetMemberId,
                     TrainerId = model.TrainerId,
                     ServiceId = model.ServiceId,
                     AppointmentDateTime = model.AppointmentDateTime,
                     DurationMinutes = service.DurationMinutes,
                     Price = service.Price,
-                    Status = AppointmentStatus.Pending,
+                    Status = isAdmin ? AppointmentStatus.Confirmed : AppointmentStatus.Pending, // Admin can auto-confirm
                     Notes = model.Notes,
                     CreatedDate = DateTime.Now
                 };
@@ -192,12 +271,15 @@ namespace FitnessCenter.Controllers
 
                 // Send confirmation email
                 var trainer = await _context.Trainers.FindAsync(model.TrainerId);
-                if (trainer != null)
+                if (trainer != null && targetMember.Email != null)
                 {
                     await _emailService.SendAppointmentConfirmationAsync(
-                        user.Email!, user.FullName, model.AppointmentDateTime, trainer.FullName);
+                        targetMember.Email, targetMember.FullName, model.AppointmentDateTime, trainer.FullName);
                 }
 
+                TempData["SuccessMessage"] = isAdmin 
+                    ? $"Appointment created successfully for {targetMember.FullName}." 
+                    : "Appointment created successfully. Waiting for admin approval.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -205,6 +287,17 @@ namespace FitnessCenter.Controllers
             if (model.ServiceId > 0)
             {
                 ViewData["TrainerId"] = new SelectList(await _appointmentService.GetAvailableTrainersAsync(model.AppointmentDateTime, model.ServiceId), "Id", "FullName", model.TrainerId);
+            }
+            if (isAdmin)
+            {
+                var members = await _context.Users
+                    .Where(u => u.Email != null)
+                    .OrderBy(u => u.FirstName)
+                    .ThenBy(u => u.LastName)
+                    .Select(u => new { u.Id, FullName = u.FullName, u.Email })
+                    .ToListAsync();
+                ViewData["MemberId"] = new SelectList(members, "Id", "FullName", selectedMemberId);
+                ViewBag.IsAdmin = true;
             }
             return View(model);
         }
@@ -234,6 +327,88 @@ namespace FitnessCenter.Controllers
                 .ToList();
             
             return Json(result);
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Member")]
+        public async Task<IActionResult> GetAvailableTimeSlots(int trainerId, string date, int durationMinutes)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(date))
+                {
+                    _logger.LogWarning("Empty date parameter");
+                    return Json(new List<object>());
+                }
+
+                // Try parsing the date - handle both "YYYY-MM-DD" and other formats
+                DateTime parsedDate;
+                if (!DateTime.TryParse(date, out parsedDate))
+                {
+                    // Try parsing as date-only format
+                    if (!DateTime.TryParseExact(date, "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out parsedDate))
+                    {
+                        _logger.LogWarning("Invalid date parameter: {Date}", date);
+                        return Json(new List<object>());
+                    }
+                }
+
+                // Ensure we're working with just the date part (no time)
+                parsedDate = parsedDate.Date;
+
+                if (durationMinutes <= 0)
+                {
+                    _logger.LogWarning("Invalid duration: {Duration}", durationMinutes);
+                    return Json(new List<object>());
+                }
+
+                _logger.LogInformation("Getting time slots for trainer {TrainerId}, date {Date} ({DayOfWeek}), duration {Duration}", 
+                    trainerId, parsedDate, parsedDate.DayOfWeek, durationMinutes);
+
+                // Check if trainer exists and has working hours
+                var trainer = await _context.Trainers
+                    .Include(t => t.WorkingHours)
+                    .FirstOrDefaultAsync(t => t.Id == trainerId);
+
+                if (trainer == null)
+                {
+                    _logger.LogWarning("Trainer {TrainerId} not found", trainerId);
+                    return Json(new List<object>());
+                }
+
+                var workingHoursForDay = trainer.WorkingHours
+                    .FirstOrDefault(wh => wh.DayOfWeek == parsedDate.DayOfWeek);
+
+                if (workingHoursForDay == null)
+                {
+                    _logger.LogWarning("No working hours found for trainer {TrainerId} on {DayOfWeek}. Available days: {Days}", 
+                        trainerId, parsedDate.DayOfWeek, 
+                        string.Join(", ", trainer.WorkingHours.Select(wh => wh.DayOfWeek.ToString())));
+                    return Json(new List<object>());
+                }
+
+                _logger.LogInformation("Found working hours: {StartTime} - {EndTime}", 
+                    workingHoursForDay.StartTime, workingHoursForDay.EndTime);
+
+                var timeSlots = await _appointmentService.GetAvailableTimeSlotsAsync(trainerId, parsedDate, durationMinutes);
+                
+                _logger.LogInformation("Found {Count} available time slots", timeSlots.Count);
+
+                var result = timeSlots
+                    .Select(ts => new
+                    {
+                        Time = ts.ToString(@"hh\:mm"),
+                        DateTime = parsedDate.Date.Add(ts).ToString("yyyy-MM-ddTHH:mm")
+                    })
+                    .ToList();
+                
+                return Json(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting available time slots");
+                return Json(new List<object>());
+            }
         }
 
         [Authorize(Roles = "Admin")]
@@ -271,34 +446,89 @@ namespace FitnessCenter.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            var appointment = await _context.Appointments.FindAsync(id);
-            if (appointment != null)
+            var appointment = await _context.Appointments
+                .Include(a => a.Member)
+                .FirstOrDefaultAsync(a => a.Id == id);
+            
+            if (appointment == null)
             {
-                _context.Appointments.Remove(appointment);
-                await _context.SaveChangesAsync();
+                TempData["ErrorMessage"] = "Appointment not found.";
+                return RedirectToAction(nameof(Index));
             }
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return NotFound();
+
+            var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
+            var isOwner = appointment.MemberId == user.Id;
+
+            // Only allow cancellation if user is owner or admin, and appointment is not completed
+            if (!isAdmin && !isOwner)
+            {
+                TempData["ErrorMessage"] = "You don't have permission to cancel this appointment.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (appointment.Status == AppointmentStatus.Completed)
+            {
+                TempData["ErrorMessage"] = "Cannot cancel a completed appointment.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Cancel instead of delete (soft delete by changing status)
+            appointment.Status = AppointmentStatus.Cancelled;
+            _context.Update(appointment);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Appointment cancelled successfully.";
             return RedirectToAction(nameof(Index));
         }
-    }
 
-    public class CreateAppointmentViewModel
-    {
-        [Required]
-        [Display(Name = "Service")]
-        public int ServiceId { get; set; }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Approve(int id)
+        {
+            var appointment = await _context.Appointments.FindAsync(id);
+            if (appointment == null)
+            {
+                TempData["ErrorMessage"] = "Appointment not found.";
+                return RedirectToAction(nameof(Index));
+            }
 
-        [Required]
-        [Display(Name = "Trainer")]
-        public int TrainerId { get; set; }
+            if (appointment.Status == AppointmentStatus.Cancelled)
+            {
+                TempData["ErrorMessage"] = "Cannot approve a cancelled appointment.";
+                return RedirectToAction(nameof(Index));
+            }
 
-        [Required]
-        [Display(Name = "Appointment Date & Time")]
-        [DataType(DataType.DateTime)]
-        public DateTime AppointmentDateTime { get; set; }
+            appointment.Status = AppointmentStatus.Confirmed;
+            _context.Update(appointment);
+            await _context.SaveChangesAsync();
 
-        [Display(Name = "Notes")]
-        [StringLength(500)]
-        public string? Notes { get; set; }
+            TempData["SuccessMessage"] = "Appointment approved successfully.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Complete(int id)
+        {
+            var appointment = await _context.Appointments.FindAsync(id);
+            if (appointment == null)
+            {
+                TempData["ErrorMessage"] = "Appointment not found.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            appointment.Status = AppointmentStatus.Completed;
+            _context.Update(appointment);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Appointment marked as completed.";
+            return RedirectToAction(nameof(Index));
+        }
     }
 }
 

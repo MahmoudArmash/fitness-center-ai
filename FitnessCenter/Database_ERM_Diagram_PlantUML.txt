@@ -1,0 +1,141 @@
+@startuml FitnessCenter_ERM_Diagram
+
+!define PRIMARY_KEY(x) <b><color:red><&key></color> x</b>
+!define FOREIGN_KEY(x) <color:blue><&key></color> x
+!define UNIQUE(x) <u>x</u>
+
+entity "Member" as Member {
+  PRIMARY_KEY(Id) : string <<PK>>
+  --
+  UserName : string
+  Email : string <<UNIQUE>>
+  FirstName : string(100)
+  LastName : string(100)
+  Address : string(500)
+  DateOfBirth : datetime
+  Gender : string(10)
+  Height : decimal(5,2) <<cm>>
+  Weight : decimal(5,2) <<kg>>
+  PhotoPath : string
+  CreatedDate : datetime
+  --
+  Note: Extends ASP.NET Core IdentityUser
+}
+
+entity "FitnessCenter" as FitnessCenter {
+  PRIMARY_KEY(Id) : int <<PK>>
+  --
+  Name : string(200) <<NOT NULL>>
+  Address : string(500) <<NOT NULL>>
+  Phone : string(20)
+  Email : string(100)
+  CreatedDate : datetime
+}
+
+entity "Trainer" as Trainer {
+  PRIMARY_KEY(Id) : int <<PK>>
+  --
+  FirstName : string(100) <<NOT NULL>>
+  LastName : string(100) <<NOT NULL>>
+  Email : string(100)
+  Phone : string(20)
+  Bio : string(500)
+  FOREIGN_KEY(FitnessCenterId) : int <<FK>>
+}
+
+entity "Service" as Service {
+  PRIMARY_KEY(Id) : int <<PK>>
+  --
+  Name : string(100) <<NOT NULL>>
+  Type : ServiceType <<Enum>>
+  Description : string(500) <<NOT NULL>>
+  Price : decimal(18,2) <<NOT NULL>>
+  DurationMinutes : int <<NOT NULL>>
+  FOREIGN_KEY(FitnessCenterId) : int <<FK>>
+}
+
+entity "Appointment" as Appointment {
+  PRIMARY_KEY(Id) : int <<PK>>
+  --
+  FOREIGN_KEY(MemberId) : string <<FK>>
+  FOREIGN_KEY(TrainerId) : int <<FK>>
+  FOREIGN_KEY(ServiceId) : int <<FK>>
+  AppointmentDateTime : datetime <<NOT NULL>>
+  DurationMinutes : int <<NOT NULL>>
+  Price : decimal(18,2) <<NOT NULL>>
+  Status : AppointmentStatus <<Enum, NOT NULL>>
+  Notes : string(500)
+  CreatedDate : datetime
+}
+
+entity "WorkingHours" as WorkingHours {
+  PRIMARY_KEY(Id) : int <<PK>>
+  --
+  DayOfWeek : DayOfWeek <<Enum, NOT NULL>>
+  StartTime : TimeSpan <<NOT NULL>>
+  EndTime : TimeSpan <<NOT NULL>>
+  FOREIGN_KEY(FitnessCenterId) : int <<FK, NULLABLE>>
+  FOREIGN_KEY(TrainerId) : int <<FK, NULLABLE>>
+  --
+  Note: Belongs to either FitnessCenter OR Trainer
+}
+
+entity "TrainerExpertise" as TrainerExpertise {
+  PRIMARY_KEY(TrainerId) : int <<PK, FK>>
+  PRIMARY_KEY(ServiceId) : int <<PK, FK>>
+  --
+  Note: Junction table for M:N relationship
+}
+
+' Relationships
+FitnessCenter ||--o{ Trainer : "employs (1:N)"
+FitnessCenter ||--o{ Service : "offers (1:N)"
+FitnessCenter ||--o{ WorkingHours : "has (1:N)"
+Trainer ||--o{ Appointment : "provides (1:N)"
+Trainer ||--o{ WorkingHours : "has (1:N)"
+Service ||--o{ Appointment : "booked_for (1:N)"
+Member ||--o{ Appointment : "makes (1:N)"
+Trainer }o--o{ Service : "expert_in (M:N via TrainerExpertise)"
+
+' Relationship details
+Member ||--o{ Appointment : "MemberId"
+Trainer ||--o{ Appointment : "TrainerId"
+Service ||--o{ Appointment : "ServiceId"
+FitnessCenter ||--o{ Trainer : "FitnessCenterId"
+FitnessCenter ||--o{ Service : "FitnessCenterId"
+FitnessCenter ||--o{ WorkingHours : "FitnessCenterId (nullable)"
+Trainer ||--o{ WorkingHours : "TrainerId (nullable)"
+Trainer ||--o{ TrainerExpertise : "TrainerId"
+Service ||--o{ TrainerExpertise : "ServiceId"
+
+note right of WorkingHours
+  Can belong to either:
+  - FitnessCenter (operating hours)
+  OR
+  - Trainer (availability hours)
+  But NOT both
+end note
+
+note right of TrainerExpertise
+  Composite Primary Key:
+  (TrainerId, ServiceId)
+  Represents which trainers
+  can provide which services
+end note
+
+note right of Appointment
+  Status Enum:
+  - Pending
+  - Confirmed
+  - Completed
+  - Cancelled
+end note
+
+note right of Service
+  Type Enum:
+  - Fitness
+  - Yoga
+  - Pilates
+end note
+
+@enduml

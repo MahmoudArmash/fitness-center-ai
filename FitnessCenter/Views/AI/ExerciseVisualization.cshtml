@@ -2,125 +2,143 @@
     ViewData["Title"] = "Exercise Visualization";
 }
 
-<div class="row">
-    <div class="col-md-8 offset-md-2">
-        <div class="card shadow">
-            <div class="card-header bg-primary text-white">
-                <h3 class="card-title mb-0">AI Exercise Visualization</h3>
-            </div>
-            <div class="card-body">
-                <p class="lead">Generate a personalized visualization description showing how you will look when performing a specific exercise. Our AI will create a detailed, vivid description based on your body metrics and the exercise you choose using Google Gemini AI.</p>
-                
-                <form asp-action="GenerateExerciseVisualization" method="post" enctype="multipart/form-data">
-                    @Html.AntiForgeryToken()
-                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
-
-                    <div class="mb-3">
-                        <label for="exerciseName" class="form-label">Exercise Name <span class="text-danger">*</span></label>
-                        <input type="text" name="exerciseName" id="exerciseName" class="form-control" required placeholder="e.g., Push-ups, Squats, Deadlifts, Bench Press" />
-                        <div class="form-text">Enter the name of the exercise you want to visualize</div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="photo" class="form-label">Optional: Upload Your Photo</label>
-                        <input type="file" name="photo" id="photo" class="form-control" accept="image/*" />
-                        <div class="form-text">Upload a photo of yourself for more accurate visualization description (JPG, PNG, GIF - Max 10MB)</div>
-                    </div>
-
-                    <div class="card bg-light mb-3">
-                        <div class="card-header">
-                            <h5 class="mb-0">Body Metrics (for personalized visualization)</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="mb-3">
-                                <div class="form-check">
-                                    <input type="hidden" name="useProfileMetrics" value="false" />
-                                    <input class="form-check-input" type="checkbox" name="useProfileMetrics" id="useProfileMetrics" value="true" checked />
-                                    <label class="form-check-label" for="useProfileMetrics">
-                                        Use my profile information (if available)
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="height" class="form-label">Height (cm)</label>
-                                    <input type="number" name="height" id="height" class="form-control" step="0.1" min="0" value="@ViewBag.UserHeight" />
-                                    <div class="form-text">Your profile: @(ViewBag.UserHeight != null ? ViewBag.UserHeight + " cm" : "Not set")</div>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="weight" class="form-label">Weight (kg)</label>
-                                    <input type="number" name="weight" id="weight" class="form-control" step="0.1" min="0" value="@ViewBag.UserWeight" />
-                                    <div class="form-text">Your profile: @(ViewBag.UserWeight != null ? ViewBag.UserWeight + " kg" : "Not set")</div>
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="gender" class="form-label">Gender</label>
-                                <select name="gender" id="gender" class="form-select">
-                                    <option value="">Select...</option>
-                                    <option value="Male" selected="@(ViewBag.UserGender == "Male")">Male</option>
-                                    <option value="Female" selected="@(ViewBag.UserGender == "Female")">Female</option>
-                                    <option value="Other" selected="@(ViewBag.UserGender == "Other")">Other</option>
-                                </select>
-                                <div class="form-text">Your profile: @(ViewBag.UserGender ?? "Not set")</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
-                            <span id="submitText">
-                                <i class="bi bi-image"></i> Generate Exercise Visualization
-                            </span>
-                            <span id="submitLoader" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
-                        </button>
-                    </div>
-                </form>
-
-                <!-- Loading Overlay -->
-                <div id="loadingOverlay" class="d-none position-fixed top-0 start-0 w-100 h-100" style="background-color: rgba(0,0,0,0.5); z-index: 9999;">
-                    <div class="d-flex justify-content-center align-items-center h-100">
-                        <div class="text-center text-white">
-                            <div class="spinner-border text-light mb-3" style="width: 3rem; height: 3rem;" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                            <h4>Generating visualization...</h4>
-                            <p>This may take a few moments</p>
-                        </div>
-                    </div>
+<div class="py-5">
+    <div class="row">
+        <div class="col-lg-8 offset-lg-2">
+            <div class="card shadow-modern">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">
+                        <i class="bi bi-image me-2"></i>AI Exercise Visualization
+                    </h3>
                 </div>
+                <div class="card-body">
+                    <p class="lead mb-4">Generate a personalized visualization description showing how you will look when performing a specific exercise. Our AI will create a detailed, vivid description based on your body metrics and the exercise you choose using Google Gemini AI.</p>
+                    
+                    <form asp-action="GenerateExerciseVisualization" method="post" enctype="multipart/form-data" data-validate>
+                        @Html.AntiForgeryToken()
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div asp-validation-summary="All" class="alert alert-danger mb-4"></div>
+                        }
 
-                <script>
-                    document.querySelector('form').addEventListener('submit', function(e) {
-                        const submitBtn = document.getElementById('submitBtn');
-                        const submitText = document.getElementById('submitText');
-                        const submitLoader = document.getElementById('submitLoader');
-                        const loadingOverlay = document.getElementById('loadingOverlay');
-                        
-                        // Disable button and show loader
-                        submitBtn.disabled = true;
-                        submitText.classList.add('d-none');
-                        submitLoader.classList.remove('d-none');
-                        loadingOverlay.classList.remove('d-none');
-                    });
-                </script>
+                        <div class="mb-4">
+                            <div class="form-floating">
+                                <input type="text" name="exerciseName" id="exerciseName" class="form-control" required placeholder="e.g., Push-ups, Squats, Deadlifts" />
+                                <label for="exerciseName">Exercise Name <span class="text-danger">*</span></label>
+                            </div>
+                            <div class="form-text">Enter the name of the exercise you want to visualize</div>
+                        </div>
 
-                <hr class="my-4" />
+                        <div class="mb-4">
+                            <label for="photo" class="form-label mb-3">
+                                <i class="bi bi-camera me-2"></i>Optional: Upload Your Photo
+                            </label>
+                            <input type="file" name="photo" id="photo" class="form-control" accept="image/*" />
+                            <div class="form-text">Upload a photo of yourself for more accurate visualization description (JPG, PNG, GIF - Max 10MB)</div>
+                        </div>
 
-                <div class="text-center">
-                    <p>Looking for other AI features?</p>
-                    <div class="btn-group" role="group">
-                        <a asp-action="Index" class="btn btn-outline-info">
-                            <i class="bi bi-camera"></i> Exercise Recommendations
-                        </a>
-                        <a asp-action="DietPlan" class="btn btn-outline-success">
-                            <i class="bi bi-apple"></i> Diet Plan
-                        </a>
+                        <div class="card border mb-4">
+                            <div class="card-header bg-transparent">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-info-circle me-2"></i>Body Metrics (for personalized visualization)
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input type="hidden" name="useProfileMetrics" value="false" />
+                                        <input class="form-check-input" type="checkbox" name="useProfileMetrics" id="useProfileMetrics" value="true" checked />
+                                        <label class="form-check-label" for="useProfileMetrics">
+                                            Use my profile information (if available)
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <div class="form-floating">
+                                            <input type="number" name="height" id="height" class="form-control" step="0.1" min="0" value="@ViewBag.UserHeight" />
+                                            <label for="height">Height (cm)</label>
+                                        </div>
+                                        <div class="form-text">Your profile: @(ViewBag.UserHeight != null ? ViewBag.UserHeight + " cm" : "Not set")</div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <div class="form-floating">
+                                            <input type="number" name="weight" id="weight" class="form-control" step="0.1" min="0" value="@ViewBag.UserWeight" />
+                                            <label for="weight">Weight (kg)</label>
+                                        </div>
+                                        <div class="form-text">Your profile: @(ViewBag.UserWeight != null ? ViewBag.UserWeight + " kg" : "Not set")</div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="form-floating">
+                                        <select name="gender" id="gender" class="form-select">
+                                            <option value="">Select...</option>
+                                            <option value="Male" selected="@(ViewBag.UserGender == "Male")">Male</option>
+                                            <option value="Female" selected="@(ViewBag.UserGender == "Female")">Female</option>
+                                            <option value="Other" selected="@(ViewBag.UserGender == "Other")">Other</option>
+                                        </select>
+                                        <label for="gender">Gender</label>
+                                    </div>
+                                    <div class="form-text">Your profile: @(ViewBag.UserGender ?? "Not set")</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                                <span id="submitText">
+                                    <i class="bi bi-image me-2"></i>Generate Exercise Visualization
+                                </span>
+                                <span id="submitLoader" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Loading Overlay -->
+                    <div id="loadingOverlay" class="d-none position-fixed top-0 start-0 w-100 h-100" style="background-color: rgba(0,0,0,0.5); z-index: 9999;">
+                        <div class="d-flex justify-content-center align-items-center h-100">
+                            <div class="text-center text-white">
+                                <div class="spinner-border text-light mb-3" style="width: 3rem; height: 3rem;" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <h4>Generating visualization...</h4>
+                                <p>This may take a few moments</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <script>
+                        document.querySelector('form').addEventListener('submit', function(e) {
+                            const submitBtn = document.getElementById('submitBtn');
+                            const submitText = document.getElementById('submitText');
+                            const submitLoader = document.getElementById('submitLoader');
+                            const loadingOverlay = document.getElementById('loadingOverlay');
+                            
+                            // Disable button and show loader
+                            submitBtn.disabled = true;
+                            submitText.classList.add('d-none');
+                            submitLoader.classList.remove('d-none');
+                            loadingOverlay.classList.remove('d-none');
+                        });
+                    </script>
+
+                    <hr class="my-5" />
+
+                    <div class="text-center">
+                        <p class="mb-3">Looking for other AI features?</p>
+                        <div class="d-flex flex-column flex-md-row gap-3 justify-content-center">
+                            <a asp-action="Index" class="btn btn-outline-primary">
+                                <i class="bi bi-camera me-2"></i>Exercise Recommendations
+                            </a>
+                            <a asp-action="DietPlan" class="btn btn-outline-primary">
+                                <i class="bi bi-apple me-2"></i>Diet Plan
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-

@@ -5,47 +5,105 @@
     ViewData["Title"] = "Create Fitness Center";
 }
 
-<h2>Create New Fitness Center</h2>
-<hr />
-
 <div class="row">
-    <div class="col-md-6">
-        <form asp-action="CreateFitnessCenter" method="post">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            
-            <div class="mb-3">
-                <label asp-for="Name" class="form-label"></label>
-                <input asp-for="Name" class="form-control" />
-                <span asp-validation-for="Name" class="text-danger"></span>
-            </div>
+    <div class="col-lg-3 col-md-4 mb-4 mb-md-0">
+        <div class="admin-sidebar">
+            <h5 class="mb-4 fw-bold">
+                <i class="bi bi-shield-check me-2"></i>Admin Panel
+            </h5>
+            <ul class="sidebar-nav">
+                <li class="sidebar-nav-item">
+                    <a class="sidebar-nav-link" asp-action="Index">
+                        <i class="bi bi-speedometer2"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="sidebar-nav-item">
+                    <a class="sidebar-nav-link active" asp-action="FitnessCenters">
+                        <i class="bi bi-building"></i>
+                        <span>Fitness Centers</span>
+                    </a>
+                </li>
+                <li class="sidebar-nav-item">
+                    <a class="sidebar-nav-link" asp-action="Services">
+                        <i class="bi bi-list-ul"></i>
+                        <span>Services</span>
+                    </a>
+                </li>
+                <li class="sidebar-nav-item">
+                    <a class="sidebar-nav-link" asp-action="Trainers">
+                        <i class="bi bi-people"></i>
+                        <span>Trainers</span>
+                    </a>
+                </li>
+                <li class="sidebar-nav-item">
+                    <a class="sidebar-nav-link" asp-controller="Appointment" asp-action="Index">
+                        <i class="bi bi-calendar-check"></i>
+                        <span>Appointments</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
 
-            <div class="mb-3">
-                <label asp-for="Address" class="form-label"></label>
-                <input asp-for="Address" class="form-control" />
-                <span asp-validation-for="Address" class="text-danger"></span>
-            </div>
+    <div class="col-lg-9 col-md-8">
+        <div class="py-5">
+            <h2 class="mb-4">
+                <i class="bi bi-building-add me-2"></i>Create New Fitness Center
+            </h2>
 
-            <div class="mb-3">
-                <label asp-for="Phone" class="form-label"></label>
-                <input asp-for="Phone" class="form-control" />
-                <span asp-validation-for="Phone" class="text-danger"></span>
-            </div>
+            <div class="card shadow-modern">
+                <div class="card-body">
+                    <form asp-action="CreateFitnessCenter" method="post" data-validate>
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4"></div>
+                        
+                        <div class="mb-3">
+                            <div class="form-floating">
+                                <input asp-for="Name" class="form-control" required />
+                                <label asp-for="Name"></label>
+                                <span asp-validation-for="Name" class="text-danger"></span>
+                            </div>
+                        </div>
 
-            <div class="mb-3">
-                <label asp-for="Email" class="form-label"></label>
-                <input asp-for="Email" class="form-control" type="email" />
-                <span asp-validation-for="Email" class="text-danger"></span>
-            </div>
+                        <div class="mb-3">
+                            <div class="form-floating">
+                                <input asp-for="Address" class="form-control" />
+                                <label asp-for="Address"></label>
+                                <span asp-validation-for="Address" class="text-danger"></span>
+                            </div>
+                        </div>
 
-            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                <a asp-action="FitnessCenters" class="btn btn-secondary">Cancel</a>
-                <button type="submit" class="btn btn-primary">Create</button>
+                        <div class="mb-3">
+                            <div class="form-floating">
+                                <input asp-for="Phone" class="form-control" />
+                                <label asp-for="Phone"></label>
+                                <span asp-validation-for="Phone" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-floating">
+                                <input asp-for="Email" class="form-control" type="email" />
+                                <label asp-for="Email"></label>
+                                <span asp-validation-for="Email" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a asp-action="FitnessCenters" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-2"></i>Create Fitness Center
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
-        </form>
+        </div>
     </div>
 </div>
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 }
-

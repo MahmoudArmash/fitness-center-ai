@@ -2,96 +2,94 @@
     ViewData["Title"] = "Exercise Visualization Result";
 }
 
-<div class="row">
-    <div class="col-md-10 offset-md-1">
-        @if (ViewBag.Success == true)
-        {
-            <div class="card shadow mb-4">
-                <div class="card-header bg-success text-white">
-                    <h3 class="card-title mb-0">Exercise Visualization Generated</h3>
-                </div>
-                <div class="card-body">
-                    <div class="text-center mb-4">
-                        <h4>@ViewBag.ExerciseName</h4>
-                        @if (ViewBag.Height != null || ViewBag.Weight != null)
-                        {
-                            <p class="text-muted">
-                                @if (ViewBag.Height != null && ViewBag.Weight != null)
-                                {
-                                    <span>Height: @ViewBag.Height cm | Weight: @ViewBag.Weight kg</span>
-                                }
-                                else if (ViewBag.Height != null)
-                                {
-                                    <span>Height: @ViewBag.Height cm</span>
-                                }
-                                else if (ViewBag.Weight != null)
-                                {
-                                    <span>Weight: @ViewBag.Weight kg</span>
-                                }
-                                @if (ViewBag.Gender != null)
-                                {
-                                    <span> | Gender: @ViewBag.Gender</span>
-                                }
-                            </p>
-                        }
+<div class="py-5">
+    <div class="row">
+        <div class="col-lg-10 offset-lg-1">
+            @if (ViewBag.Success == true)
+            {
+                <div class="card shadow-modern mb-4">
+                    <div class="card-header">
+                        <h3 class="card-title mb-0">
+                            <i class="bi bi-check-circle me-2 text-success"></i>Exercise Visualization Generated
+                        </h3>
                     </div>
+                    <div class="card-body">
+                        <div class="text-center mb-4">
+                            <h4 class="mb-3">@ViewBag.ExerciseName</h4>
+                            @if (ViewBag.Height != null || ViewBag.Weight != null)
+                            {
+                                <p class="text-muted">
+                                    @if (ViewBag.Height != null && ViewBag.Weight != null)
+                                    {
+                                        <span>Height: @ViewBag.Height cm | Weight: @ViewBag.Weight kg</span>
+                                    }
+                                    else if (ViewBag.Height != null)
+                                    {
+                                        <span>Height: @ViewBag.Height cm</span>
+                                    }
+                                    else if (ViewBag.Weight != null)
+                                    {
+                                        <span>Weight: @ViewBag.Weight kg</span>
+                                    }
+                                    @if (ViewBag.Gender != null)
+                                    {
+                                        <span> | Gender: @ViewBag.Gender</span>
+                                    }
+                                </p>
+                            }
+                        </div>
 
-                    <div class="mb-4">
-                        @if (!string.IsNullOrEmpty(ViewBag.VisualizationDescription))
-                        {
-                            <div class="visualization-description p-4 bg-light rounded border">
-                                <h5 class="mb-3"><i class="bi bi-eye"></i> Visualization Description</h5>
-                                <div class="visualization-content">
-                                    @Html.Raw(ViewBag.VisualizationDescription?.Replace("\n", "<br/>"))
+                        <div class="mb-4">
+                            @if (!string.IsNullOrEmpty(ViewBag.VisualizationDescription))
+                            {
+                                <div class="visualization-description p-4 bg-light rounded border">
+                                    <h5 class="mb-3">
+                                        <i class="bi bi-eye me-2 text-primary"></i>Visualization Description
+                                    </h5>
+                                    <div class="visualization-content" style="line-height: 1.8; font-size: 1.05rem;">
+                                        @Html.Raw(ViewBag.VisualizationDescription?.Replace("\n", "<br/>"))
+                                    </div>
                                 </div>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="alert alert-warning">
-                                <p>Visualization could not be generated. Please try again.</p>
-                            </div>
-                        }
-                    </div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-warning">
+                                    <p>Visualization could not be generated. Please try again.</p>
+                                </div>
+                            }
+                        </div>
 
-                    <div class="alert alert-info">
-                        <h5><i class="bi bi-info-circle"></i> About This Visualization</h5>
-                        <p class="mb-0">
-                            This AI-generated visualization description shows how you might look performing the exercise based on your body metrics. 
-                            The visualization is created using Google Gemini AI and is intended for motivational and educational purposes. 
-                            Always consult with a fitness professional before starting any new exercise routine.
-                        </p>
+                        <div class="alert alert-info">
+                            <h5>
+                                <i class="bi bi-info-circle me-2"></i>About This Visualization
+                            </h5>
+                            <p class="mb-0">
+                                This AI-generated visualization description shows how you might look performing the exercise based on your body metrics. 
+                                The visualization is created using Google Gemini AI and is intended for motivational and educational purposes. 
+                                Always consult with a fitness professional before starting any new exercise routine.
+                            </p>
+                        </div>
                     </div>
                 </div>
-            </div>
-        }
-        else
-        {
-            <div class="alert alert-danger">
-                <h4>Error</h4>
-                <p>Unable to generate exercise visualization. Please try again.</p>
-            </div>
-        }
+            }
+            else
+            {
+                <div class="alert alert-danger shadow-modern">
+                    <h4>
+                        <i class="bi bi-exclamation-triangle me-2"></i>Error
+                    </h4>
+                    <p>Unable to generate exercise visualization. Please try again.</p>
+                </div>
+            }
 
-        <div class="text-center">
-            <a asp-action="ExerciseVisualization" class="btn btn-primary me-2">
-                <i class="bi bi-arrow-left"></i> Generate Another Visualization
-            </a>
-            <a asp-action="Index" class="btn btn-outline-secondary">
-                <i class="bi bi-house"></i> Back to AI Features
-            </a>
+            <div class="text-center d-flex flex-column flex-md-row gap-3 justify-content-center">
+                <a asp-action="ExerciseVisualization" class="btn btn-primary btn-lg">
+                    <i class="bi bi-arrow-left me-2"></i>Generate Another Visualization
+                </a>
+                <a asp-action="Index" class="btn btn-outline-secondary btn-lg">
+                    <i class="bi bi-house me-2"></i>Back to AI Features
+                </a>
+            </div>
         </div>
     </div>
 </div>
-
-<style>
-    .visualization-description {
-        line-height: 1.8;
-        white-space: pre-wrap;
-    }
-    .visualization-content {
-        font-size: 1.05rem;
-        color: #333;
-    }
-</style>
-
