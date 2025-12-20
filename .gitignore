@@ -7,17 +7,30 @@ obj/
 *.dll
 *.exe
 *.pdb
+
+## Database files
 *.db
 *.db-shm
 *.db-wal
+*.sqlite
+*.sqlite3
+**/FitnessCenter.db
+**/FitnessCenter.db-shm
+**/FitnessCenter.db-wal
 
 ## Visual Studio
 .vs/
+**/.vs/
 *.userosscache
 *.sln.docstates
+**/CopilotIndices/
 
 ## Cursor IDE
 .cursor/
+.cursor/**
+*.cursor
+.cursorrules
+.cursorignore
 
 ## Environment variables and secrets
 appsettings.Development.json
@@ -48,3 +61,51 @@ wwwroot/uploads/
 ## OS
 .DS_Store
 Thumbs.db
+desktop.ini
+
+## IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+## Temporary files
+*.tmp
+*.temp
+*.log
+*.bak
+*.cache
+
+## Database files (already covered but being explicit)
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+## User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+## NuGet packages
+packages/
+*.nupkg
+*.snupkg
+
+## Test results
+TestResults/
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+*.coveragexml
+
+## Publish profiles
+*.pubxml
+*.publishproj

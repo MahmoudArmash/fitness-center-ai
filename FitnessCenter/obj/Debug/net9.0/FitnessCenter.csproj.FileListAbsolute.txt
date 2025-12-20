@@ -269,3 +269,4 @@ C:\Users\mo3ta\Documents\CsharpFund\fitness-center-ai\FitnessCenter\obj\Debug\ne
 C:\Users\mo3ta\Documents\CsharpFund\fitness-center-ai\FitnessCenter\obj\Debug\net9.0\ref\FitnessCenter.dll
 C:\Users\mo3ta\Documents\CsharpFund\fitness-center-ai\FitnessCenter\obj\Debug\net9.0\compressed\1k066c8ihw-xz92dwobxd.gz
 C:\Users\mo3ta\Documents\CsharpFund\fitness-center-ai\FitnessCenter\obj\Debug\net9.0\compressed\r7uwovlwbl-xgcjj2z24a.gz
+C:\Users\mo3ta\Documents\CsharpFund\fitness-center-ai\FitnessCenter\obj\Debug\net9.0\staticwebassets.upToDateCheck.txt
