@@ -1,0 +1,111 @@
+@model IEnumerable<Service>
+@using FitnessCenter.Models
+
+@{
+    ViewData["Title"] = "Services";
+}
+
+<div class="py-5">
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold mb-3">Our Services</h1>
+        <p class="lead text-muted">Choose from our wide range of fitness services tailored to your needs</p>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="card shadow-modern mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        <input type="text" name="searchTerm" class="form-control" id="searchTerm" 
+                               value="@ViewBag.SearchTerm" placeholder="Search services...">
+                        <label for="searchTerm"><i class="bi bi-search me-2"></i>Search</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-floating">
+                        <select name="serviceType" class="form-select" id="serviceType">
+                            <option value="">All Types</option>
+                            @foreach (var type in ViewBag.ServiceTypes ?? new List<ServiceType>())
+                            {
+                                <option value="@type" selected="@(ViewBag.ServiceType?.ToString() == type.ToString())">@type</option>
+                            }
+                        </select>
+                        <label for="serviceType">Service Type</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-floating">
+                        <select name="fitnessCenterId" class="form-select" id="fitnessCenterId">
+                            <option value="">All Centers</option>
+                            @foreach (var center in ViewBag.FitnessCenters ?? new List<FitnessCenter>())
+                            {
+                                <option value="@center.Id" selected="@(ViewBag.FitnessCenterId == center.Id)">@center.Name</option>
+                            }
+                        </select>
+                        <label for="fitnessCenterId">Fitness Center</label>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary" style="height: 58px;">
+                            <i class="bi bi-funnel me-1"></i>Filter
+                        </button>
+                    </div>
+                </div>
+            </form>
+            @if (!string.IsNullOrWhiteSpace(ViewBag.SearchTerm as string) || ViewBag.ServiceType != null || ViewBag.FitnessCenterId != null)
+            {
+                <div class="mt-3">
+                    <a href="@Url.Action("Index")" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-x-circle me-1"></i>Clear Filters
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+
+<div class="row g-4">
+    @foreach (var service in Model)
+    {
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 shadow-modern">
+                    <div class="card-body d-flex flex-column">
+                        <div class="mb-3">
+                            <i class="bi bi-heart-pulse" style="font-size: 2.5rem; color: var(--primary-color);"></i>
+                        </div>
+                        <h5 class="card-title fw-bold">@service.Name</h5>
+                        <p class="card-text text-muted flex-grow-1">@service.Description</p>
+                        <ul class="list-unstyled mb-4">
+                            <li class="mb-2">
+                                <i class="bi bi-tag me-2 text-primary"></i>
+                                <strong>Type:</strong> @service.Type
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-clock me-2 text-primary"></i>
+                                <strong>Duration:</strong> @service.DurationMinutes minutes
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-currency-dollar me-2 text-accent"></i>
+                                <strong>Price:</strong> <span class="text-primary fw-bold">$@service.Price.ToString("F2")</span>
+                            </li>
+                    </ul>
+                </div>
+                    <div class="card-footer bg-transparent border-0 pt-0">
+                        <div class="d-grid gap-2">
+                            <a asp-action="Details" asp-route-id="@service.Id" class="btn btn-outline-primary">
+                                <i class="bi bi-info-circle me-2"></i>View Details
+                            </a>
+                    @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Member"))
+                    {
+                                <a asp-controller="Appointment" asp-action="Create" class="btn btn-primary">
+                                    <i class="bi bi-calendar-plus me-2"></i>Book Now
+                                </a>
+                    }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        </div>
+</div>

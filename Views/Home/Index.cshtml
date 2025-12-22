@@ -1,0 +1,156 @@
+@{
+    ViewData["Title"] = "Home";
+}
+
+<!-- Hero Section -->
+<section class="hero-section fade-in-up">
+    <h1 class="hero-title">Transform Your Fitness Journey</h1>
+    <p class="hero-subtitle">
+        Join our premium fitness center and achieve your health goals with personalized training, 
+        expert guidance, and AI-powered recommendations.
+    </p>
+    <div class="d-flex flex-column flex-md-row gap-3 justify-content-center">
+        @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Member"))
+        {
+            <a asp-controller="Appointment" asp-action="Create" class="btn btn-primary btn-lg">
+                <i class="bi bi-calendar-plus me-2"></i> Book Appointment
+            </a>
+            <a asp-controller="Service" asp-action="Index" class="btn btn-outline-primary btn-lg">
+                <i class="bi bi-grid me-2"></i> View Services
+            </a>
+        }
+        else
+        {
+            <a asp-controller="Account" asp-action="Register" class="btn btn-primary btn-lg">
+                <i class="bi bi-person-plus me-2"></i> Get Started
+            </a>
+            <a asp-controller="Account" asp-action="Login" class="btn btn-outline-primary btn-lg">
+                <i class="bi bi-box-arrow-in-right me-2"></i> Sign In
+            </a>
+        }
+</div>
+</section>
+
+<!-- Features Grid -->
+<div class="row g-4 mb-5">
+    <div class="col-md-4">
+        <div class="card h-100 shadow-modern">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="bi bi-person-badge" style="font-size: 3rem; color: var(--primary);"></i>
+                </div>
+                <h3 class="card-title text-gradient">Personal Training</h3>
+                <p class="card-text">
+                    One-on-one sessions with certified trainers tailored to your fitness goals. 
+                    Get personalized attention and expert guidance every step of the way.
+                </p>
+                <a asp-controller="Service" asp-action="Index" class="btn btn-primary">
+                    <i class="bi bi-arrow-right me-2"></i> Explore Services
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 shadow-modern">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="bi bi-people" style="font-size: 3rem; color: var(--accent);"></i>
+                </div>
+                <h3 class="card-title text-gradient">Group Classes</h3>
+                <p class="card-text">
+                    Join our yoga and pilates classes for a fun and social workout experience. 
+                    Stay motivated with a community of fitness enthusiasts.
+                </p>
+                <a asp-controller="Service" asp-action="Index" class="btn btn-accent">
+                    <i class="bi bi-arrow-right me-2"></i> View Classes
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 shadow-modern">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="bi bi-robot" style="font-size: 3rem; color: var(--primary);"></i>
+                </div>
+                <h3 class="card-title text-gradient">AI Recommendations</h3>
+                <p class="card-text">
+                    Get personalized exercise recommendations based on AI-powered photo analysis. 
+                    Advanced technology meets fitness expertise.
+                </p>
+                @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Member"))
+                {
+                    <a asp-controller="AI" asp-action="Index" class="btn btn-primary">
+                        <i class="bi bi-arrow-right me-2"></i> Try AI Analysis
+                    </a>
+                }
+                else
+                {
+                    <a asp-controller="Account" asp-action="Register" class="btn btn-primary">
+                        <i class="bi bi-arrow-right me-2"></i> Get Started
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Call to Action Section -->
+@if (User.Identity?.IsAuthenticated == false)
+{
+    <div class="row mb-5">
+        <div class="col-lg-8 offset-lg-2">
+            <div class="card shadow-modern border-0">
+                <div class="card-body text-center p-5">
+                    <h2 class="mb-3">Ready to Start Your Fitness Journey?</h2>
+                    <p class="lead mb-4">
+                        Create an account to book appointments, track your progress, 
+                        and access all premium features of our fitness center.
+                    </p>
+                    <div class="d-flex flex-column flex-md-row gap-3 justify-content-center">
+                        <a asp-controller="Account" asp-action="Register" class="btn btn-primary btn-lg">
+                            <i class="bi bi-person-plus me-2"></i> Create Account
+                        </a>
+                        <a asp-controller="Account" asp-action="Login" class="btn btn-outline-primary btn-lg">
+                            <i class="bi bi-box-arrow-in-right me-2"></i> Sign In
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Stats Section (if authenticated) -->
+@if (User.Identity?.IsAuthenticated == true)
+{
+    <div class="row g-4 mb-5">
+        <div class="col-12">
+            <h2 class="text-center mb-4">Why Choose Us?</h2>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-value">24/7</div>
+                <div class="stat-label">Access</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-value">50+</div>
+                <div class="stat-label">Expert Trainers</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-value">1000+</div>
+                <div class="stat-label">Happy Members</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-value">AI</div>
+                <div class="stat-label">Powered Insights</div>
+            </div>
+        </div>
+    </div>
+}

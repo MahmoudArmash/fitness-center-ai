@@ -1,0 +1,168 @@
+═══════════════════════════════════════════════════════════════════════════════
+                    FITNESS CENTER MANAGEMENT SYSTEM
+                    ENTITY RELATIONSHIP MODEL (ERM)
+═══════════════════════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              ENTITIES                                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+1. MEMBER (extends IdentityUser)
+   ├─ Id (PK, string) - Primary Key from IdentityUser
+   ├─ UserName, Email (unique)
+   ├─ FirstName, LastName
+   ├─ Address, DateOfBirth, Gender
+   ├─ Height (decimal), Weight (decimal) - Body metrics
+   ├─ PhotoPath
+   └─ CreatedDate
+   
+   Relationships: 1 ────< N Appointments
+
+2. FITNESSCENTER
+   ├─ Id (PK, int)
+   ├─ Name, Address
+   ├─ Phone, Email
+   └─ CreatedDate
+   
+   Relationships: 
+     1 ────< N Trainers
+     1 ────< N Services
+     1 ────< N WorkingHours
+
+3. TRAINER
+   ├─ Id (PK, int)
+   ├─ FirstName, LastName
+   ├─ Email, Phone
+   ├─ Bio
+   └─ FitnessCenterId (FK) → FitnessCenter.Id
+   
+   Relationships:
+     N ────< 1 FitnessCenter
+     1 ────< N Appointments
+     1 ────< N WorkingHours
+     M ────< N Services (via TrainerExpertise)
+
+4. SERVICE
+   ├─ Id (PK, int)
+   ├─ Name
+   ├─ Type (Enum: Fitness, Yoga, Pilates)
+   ├─ Description
+   ├─ Price (decimal)
+   ├─ DurationMinutes
+   └─ FitnessCenterId (FK) → FitnessCenter.Id
+   
+   Relationships:
+     N ────< 1 FitnessCenter
+     1 ────< N Appointments
+     M ────< N Trainers (via TrainerExpertise)
+
+5. APPOINTMENT
+   ├─ Id (PK, int)
+   ├─ MemberId (FK) → Member.Id
+   ├─ TrainerId (FK) → Trainer.Id
+   ├─ ServiceId (FK) → Service.Id
+   ├─ AppointmentDateTime
+   ├─ DurationMinutes
+   ├─ Price (decimal)
+   ├─ Status (Enum: Pending, Confirmed, Completed, Cancelled)
+   ├─ Notes
+   └─ CreatedDate
+   
+   Relationships:
+     N ────< 1 Member
+     N ────< 1 Trainer
+     N ────< 1 Service
+
+6. WORKINGHOURS
+   ├─ Id (PK, int)
+   ├─ DayOfWeek (Enum: Monday-Sunday)
+   ├─ StartTime (TimeSpan)
+   ├─ EndTime (TimeSpan)
+   ├─ FitnessCenterId (FK, nullable) → FitnessCenter.Id
+   └─ TrainerId (FK, nullable) → Trainer.Id
+   
+   Relationships:
+     N ────< 1 FitnessCenter (optional)
+     N ────< 1 Trainer (optional)
+   
+   Note: Belongs to EITHER FitnessCenter OR Trainer (not both)
+
+7. TRAINEREXPERTISE (Junction Table)
+   ├─ TrainerId (PK, FK) → Trainer.Id
+   └─ ServiceId (PK, FK) → Service.Id
+   
+   Purpose: Many-to-Many relationship between Trainer and Service
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          RELATIONSHIP DIAGRAM                                │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+                    ┌──────────────┐
+                    │   MEMBER     │
+                    │  (Identity) │
+                    └──────┬───────┘
+                           │
+                           │ 1:N
+                           │
+                    ┌──────▼──────────┐
+                    │   APPOINTMENT   │
+                    └───┬───────┬─────┘
+                        │       │
+                    N:1 │       │ N:1
+                        │       │
+        ┌───────────────┘       └───────────────┐
+        │                                        │
+┌───────▼──────┐                      ┌────────▼──────┐
+│   TRAINER    │                      │    SERVICE    │
+└───┬──────────┘                      └───────┬───────┘
+    │                                          │
+    │ 1:N                                      │ N:1
+    │                                          │
+┌───▼──────────┐                      ┌───────▼───────┐
+│ WORKINGHOURS │                      │ FITNESSCENTER │
+└───┬───────────┘                      └───────┬───────┘
+    │                                          │
+    │ N:1 (optional)                           │ 1:N
+    │                                          │
+    └──────────────────────────────────────────┘
+    
+    ┌──────────────────┐
+    │ TRAINEREXPERTISE │ (Junction Table)
+    └────────┬─────────┘
+             │
+    ┌────────┴────────┐
+    │                 │
+┌───▼──────┐    ┌────▼──────┐
+│ TRAINER  │    │  SERVICE  │
+└──────────┘    └───────────┘
+    M ──────────────── N
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         CARDINALITY SUMMARY                                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+FitnessCenter (1) ────────< (N) Trainer
+FitnessCenter (1) ────────< (N) Service  
+FitnessCenter (1) ────────< (N) WorkingHours
+Trainer (1) ────────< (N) Appointment
+Trainer (1) ────────< (N) WorkingHours
+Service (1) ────────< (N) Appointment
+Member (1) ────────< (N) Appointment
+Trainer (M) ────────< (N) Service [via TrainerExpertise]
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         DELETE BEHAVIORS                                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+CASCADE DELETE:
+  - FitnessCenter → Trainer
+  - FitnessCenter → Service
+  - FitnessCenter → WorkingHours
+  - Trainer → WorkingHours
+
+RESTRICT DELETE:
+  - Member → Appointment
+  - Trainer → Appointment
+  - Service → Appointment
+
+═══════════════════════════════════════════════════════════════════════════════

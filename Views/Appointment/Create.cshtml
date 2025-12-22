@@ -1,0 +1,221 @@
+@model CreateAppointmentViewModel
+
+@{
+    ViewData["Title"] = "Book Appointment";
+}
+
+<div class="row">
+    <div class="col-lg-8 offset-lg-2">
+        <div class="card shadow-modern">
+            <div class="card-header">
+                <h3 class="card-title mb-0">
+                    <i class="bi bi-calendar-plus me-2"></i>Book New Appointment
+                </h3>
+            </div>
+            <div class="card-body">
+                <form asp-action="Create" method="post" id="appointmentForm" data-validate>
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4"></div>
+
+                    @if (ViewBag.IsAdmin == true)
+                    {
+                        <div class="form-floating mb-3">
+                            <select name="selectedMemberId" class="form-select" id="memberSelect" asp-items="ViewBag.MemberId">
+                                <option value="">-- Select Member (Optional - leave empty for yourself) --</option>
+                            </select>
+                            <label>Member <small class="text-muted">(Admin Only)</small></label>
+                            <small class="form-text text-muted">Leave empty to create appointment for yourself, or select a member to create for them.</small>
+                        </div>
+                    }
+
+                    <div class="form-floating mb-3">
+                        <select asp-for="ServiceId" class="form-select" id="serviceSelect" required>
+                            <option value="">-- Select Service --</option>
+                        </select>
+                        <label asp-for="ServiceId"></label>
+                        <span asp-validation-for="ServiceId" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <input type="date" class="form-control" id="appointmentDate" required />
+                        <label>Appointment Date <span class="text-danger">*</span></label>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <select asp-for="TrainerId" class="form-select" id="trainerSelect" required>
+                            <option value="">-- Select Service and Date First --</option>
+                        </select>
+                        <label asp-for="TrainerId"></label>
+                        <span asp-validation-for="TrainerId" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3" id="timeSlotsContainer" style="display: none;">
+                        <label class="form-label mb-2">
+                            <i class="bi bi-clock me-2"></i>Available Time Slots
+                        </label>
+                        <div id="timeSlots" class="d-flex flex-wrap gap-2"></div>
+                        <small class="form-text text-muted">Click on a time slot to select it</small>
+                    </div>
+
+                    <input type="hidden" asp-for="AppointmentDateTime" id="appointmentDateTime" />
+                    <span asp-validation-for="AppointmentDateTime" class="text-danger"></span>
+
+                    <div class="form-floating mb-4">
+                        <textarea asp-for="Notes" class="form-control" rows="3" style="height: 100px;"></textarea>
+                        <label asp-for="Notes"></label>
+                        <span asp-validation-for="Notes" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a asp-action="Index" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle me-2"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-2"></i>Book Appointment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        $(document).ready(function() {
+            var selectedServiceDuration = 0;
+
+            // Load services
+            $.get('/api/api/services', function(services) {
+                var select = $('#serviceSelect');
+                services.forEach(function(service) {
+                    select.append($('<option></option>').val(service.id).text(service.name + ' - $' + service.price).data('duration', service.durationMinutes));
+                });
+            });
+
+            // Set minimum date to today
+            var today = new Date().toISOString().split('T')[0];
+            $('#appointmentDate').attr('min', today);
+
+            // Load available trainers when service and date are selected
+            $('#serviceSelect, #appointmentDate').on('change', function() {
+                var serviceId = $('#serviceSelect').val();
+                var date = $('#appointmentDate').val();
+                
+                if (serviceId) {
+                    selectedServiceDuration = $('#serviceSelect option:selected').data('duration') || 60;
+                }
+                
+                if (serviceId && date) {
+                    var dateTime = new Date(date + 'T12:00:00');
+                    var isoDate = dateTime.toISOString();
+                    
+                    $.get('/Appointment/GetAvailableTrainers', {
+                        serviceId: serviceId,
+                        appointmentDateTime: isoDate
+                    }, function(trainers) {
+                        var select = $('#trainerSelect');
+                        select.empty();
+                        if (trainers.length === 0) {
+                            select.append($('<option></option>').val('').text('No trainers available at this time'));
+                            $('#timeSlotsContainer').hide();
+                        } else {
+                            select.append($('<option></option>').val('').text('-- Select Trainer --'));
+                            trainers.forEach(function(trainer) {
+                                select.append($('<option></option>').val(trainer.id).text(trainer.fullName));
+                            });
+                        }
+                    });
+                } else {
+                    $('#trainerSelect').empty().append($('<option></option>').val('').text('-- Select Service and Date First --'));
+                    $('#timeSlotsContainer').hide();
+                }
+            });
+
+            // Load available time slots when trainer is selected
+            $('#trainerSelect').on('change', function() {
+                var trainerId = $(this).val();
+                var date = $('#appointmentDate').val();
+                var serviceId = $('#serviceSelect').val();
+
+                console.log('Trainer changed:', { trainerId, date, serviceId, duration: selectedServiceDuration });
+
+                if (trainerId && date && serviceId && selectedServiceDuration) {
+                    // Show loading state
+                    $('#timeSlotsContainer').show();
+                    $('#timeSlots').html('<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Loading time slots...</span></div><small class="d-block mt-2 text-muted">Loading available times...</small></div>');
+                    
+                    var url = '/Appointment/GetAvailableTimeSlots?trainerId=' + trainerId + '&date=' + encodeURIComponent(date) + '&durationMinutes=' + selectedServiceDuration;
+                    console.log('Requesting time slots from:', url);
+                    
+                    $.ajax({
+                        url: url,
+                        type: 'GET',
+                        dataType: 'json',
+                        success: function(timeSlots) {
+                            console.log('Time slots received:', timeSlots);
+                            var container = $('#timeSlots');
+                            container.empty();
+                            
+                            if (!timeSlots || timeSlots.length === 0) {
+                                container.append($('<div class="alert alert-warning w-100 mb-0"><i class="bi bi-exclamation-triangle me-2"></i>No available time slots for this trainer on the selected date. Please select a different date or trainer.</div>'));
+                            } else {
+                                // Handle both camelCase (time, dateTime) and PascalCase (Time, DateTime) for compatibility
+                                timeSlots.forEach(function(slot) {
+                                    var time = slot.time || slot.Time;
+                                    var dateTime = slot.dateTime || slot.DateTime;
+                                    
+                                    if (slot && time && dateTime) {
+                                        var btn = $('<button type="button" class="btn btn-outline-primary time-slot-btn"></button>')
+                                            .text(time)
+                                            .data('datetime', dateTime)
+                                            .on('click', function() {
+                                                $('.time-slot-btn').removeClass('active');
+                                                $(this).addClass('active');
+                                                $('#appointmentDateTime').val($(this).data('datetime'));
+                                                console.log('Time slot selected:', $(this).data('datetime'));
+                                            });
+                                        container.append(btn);
+                                    } else {
+                                        console.warn('Invalid slot data:', slot);
+                                    }
+                                });
+                                
+                                if (container.children().length === 0) {
+                                    container.append($('<div class="alert alert-warning w-100 mb-0"><i class="bi bi-exclamation-triangle me-2"></i>No valid time slots found in the response.</div>'));
+                                } else {
+                                    console.log('Successfully displayed', container.children().length, 'time slots');
+                                }
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Error loading time slots:', { 
+                                status: xhr.status, 
+                                statusText: xhr.statusText, 
+                                responseText: xhr.responseText,
+                                error: error 
+                            });
+                            var errorMsg = 'Error loading time slots. ';
+                            if (xhr.status === 401) {
+                                errorMsg += 'Please log in again.';
+                            } else if (xhr.status === 404) {
+                                errorMsg += 'Endpoint not found. Please refresh the page.';
+                            } else {
+                                errorMsg += 'Please try again.';
+                            }
+                            $('#timeSlots').html('<div class="alert alert-danger w-100 mb-0"><i class="bi bi-x-circle me-2"></i>' + errorMsg + '</div>');
+                        }
+                    });
+                } else {
+                    $('#timeSlotsContainer').hide();
+                    $('#appointmentDateTime').val('');
+                    if (!trainerId) console.log('Missing trainerId');
+                    if (!date) console.log('Missing date');
+                    if (!serviceId) console.log('Missing serviceId');
+                    if (!selectedServiceDuration) console.log('Missing duration:', selectedServiceDuration);
+                }
+            });
+        });
+    </script>
+}

@@ -1,0 +1,82 @@
+@* Reusable Delete Confirmation Modal *@
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirm Delete
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="deleteModalMessage">Are you sure you want to delete this item? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteModalForm" method="post" style="display: inline;">
+                    <input type="hidden" name="id" id="deleteModalId" />
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash-fill me-1"></i>Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Function to show delete confirmation modal
+    function showDeleteModal(formId, actionUrl, message, itemName) {
+        const form = document.getElementById(formId);
+        if (!form) {
+            console.error('Form not found:', formId);
+            return;
+        }
+
+        // Get the ID from the form
+        const idInput = form.querySelector('input[name="id"]');
+        if (!idInput) {
+            console.error('ID input not found in form:', formId);
+            return;
+        }
+
+        const id = idInput.value;
+        
+        // Set modal content
+        const modalMessage = document.getElementById('deleteModalMessage');
+        const modalForm = document.getElementById('deleteModalForm');
+        const modalIdInput = document.getElementById('deleteModalId');
+
+        if (!modalMessage || !modalForm || !modalIdInput) {
+            console.error('Modal elements not found');
+            return;
+        }
+
+        // Set message
+        if (itemName) {
+            modalMessage.textContent = `Are you sure you want to delete "${itemName}"? This action cannot be undone.`;
+        } else {
+            modalMessage.textContent = message || 'Are you sure you want to delete this item? This action cannot be undone.';
+        }
+
+        // Copy anti-forgery token from original form if it exists
+        const originalToken = form.querySelector('input[name="__RequestVerificationToken"]');
+        const modalToken = modalForm.querySelector('input[name="__RequestVerificationToken"]');
+        if (originalToken && modalToken) {
+            modalToken.value = originalToken.value;
+        }
+
+        // Set form action and ID
+        modalForm.action = actionUrl;
+        modalIdInput.value = id;
+
+        // Show modal
+        const deleteModalElement = document.getElementById('deleteModal');
+        if (deleteModalElement) {
+            const deleteModal = new bootstrap.Modal(deleteModalElement);
+            deleteModal.show();
+        }
+    }
+</script>
+

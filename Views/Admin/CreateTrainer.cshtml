@@ -1,0 +1,195 @@
+@model Trainer
+
+@{
+    ViewData["Title"] = "Create Trainer";
+}
+
+<div class="row">
+    <div class="col-lg-3 col-md-4 mb-4 mb-md-0">
+        <div class="admin-sidebar">
+            <h5 class="mb-4 fw-bold">
+                <i class="bi bi-shield-check me-2"></i>Admin Panel
+            </h5>
+            <ul class="sidebar-nav">
+                <li class="sidebar-nav-item">
+                    <a class="sidebar-nav-link" asp-action="Index">
+                        <i class="bi bi-speedometer2"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="sidebar-nav-item">
+                    <a class="sidebar-nav-link" asp-action="FitnessCenters">
+                        <i class="bi bi-building"></i>
+                        <span>Fitness Centers</span>
+                    </a>
+                </li>
+                <li class="sidebar-nav-item">
+                    <a class="sidebar-nav-link" asp-action="Services">
+                        <i class="bi bi-list-ul"></i>
+                        <span>Services</span>
+                    </a>
+                </li>
+                <li class="sidebar-nav-item">
+                    <a class="sidebar-nav-link active" asp-action="Trainers">
+                        <i class="bi bi-people"></i>
+                        <span>Trainers</span>
+                    </a>
+                </li>
+                <li class="sidebar-nav-item">
+                    <a class="sidebar-nav-link" asp-controller="Appointment" asp-action="Index">
+                        <i class="bi bi-calendar-check"></i>
+                        <span>Appointments</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="col-lg-9 col-md-8">
+        <div class="py-5">
+            <h2 class="mb-4">
+                <i class="bi bi-person-plus me-2"></i>Create New Trainer
+            </h2>
+
+            <div class="card shadow-modern">
+                <div class="card-body">
+                    <form asp-action="CreateTrainer" method="post" data-validate>
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4"></div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                                <div class="form-floating">
+                                    <input asp-for="FirstName" class="form-control" required />
+                                    <label asp-for="FirstName"></label>
+                    <span asp-validation-for="FirstName" class="text-danger"></span>
+                                </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                                <div class="form-floating">
+                                    <input asp-for="LastName" class="form-control" required />
+                                    <label asp-for="LastName"></label>
+                    <span asp-validation-for="LastName" class="text-danger"></span>
+                                </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                            <div class="form-floating">
+                                <input asp-for="Email" class="form-control" type="email" required />
+                                <label asp-for="Email"></label>
+                <span asp-validation-for="Email" class="text-danger"></span>
+                            </div>
+            </div>
+
+            <div class="mb-3">
+                            <div class="form-floating">
+                <input asp-for="Phone" class="form-control" />
+                                <label asp-for="Phone"></label>
+                <span asp-validation-for="Phone" class="text-danger"></span>
+                            </div>
+            </div>
+
+            <div class="mb-3">
+                            <div class="form-floating">
+                                <textarea asp-for="Bio" class="form-control" rows="3" style="height: 100px;"></textarea>
+                                <label asp-for="Bio"></label>
+                <span asp-validation-for="Bio" class="text-danger"></span>
+                            </div>
+            </div>
+
+            <div class="mb-3">
+                            <div class="form-floating">
+                                <select asp-for="FitnessCenterId" class="form-select" asp-items="ViewBag.FitnessCenterId" required>
+                                    <option value="">-- Select Fitness Center --</option>
+                                </select>
+                                <label asp-for="FitnessCenterId"></label>
+                <span asp-validation-for="FitnessCenterId" class="text-danger"></span>
+                            </div>
+            </div>
+
+                        <div class="mb-4">
+                            <label class="form-label mb-3">
+                                <i class="bi bi-list-check me-2"></i>Expertise (Services)
+                            </label>
+                            <select name="selectedServices" class="form-select" multiple size="5" asp-items="ViewBag.ServiceIds"></select>
+                <small class="form-text text-muted">Hold Ctrl (or Cmd on Mac) to select multiple services</small>
+            </div>
+
+                        <div class="mb-4">
+                            <h5 class="mb-3">
+                                <i class="bi bi-clock me-2"></i>Working Hours
+                            </h5>
+                            <p class="text-muted small mb-3">Set the trainer's availability for each day of the week</p>
+                            
+                            <div id="workingHoursContainer">
+                                @{
+                                    var daysOfWeek = Enum.GetValues(typeof(DayOfWeek)).Cast<DayOfWeek>();
+                                    foreach (var day in daysOfWeek)
+                                    {
+                                        <div class="card border mb-3 working-hours-day" data-day="@((int)day)">
+                                            <div class="card-body">
+                                                <div class="row align-items-center">
+                                                    <div class="col-md-2 mb-2 mb-md-0">
+                                                        <strong>@day.ToString()</strong>
+                                                    </div>
+                                                    <div class="col-md-4 mb-2 mb-md-0">
+                                                        <label class="form-label small">Start Time</label>
+                                                        <input type="time" name="workingHours[@((int)day)].StartTime" class="form-control form-control-sm" />
+                                                        <input type="hidden" name="workingHours[@((int)day)].DayOfWeek" value="@((int)day)" />
+                                                    </div>
+                                                    <div class="col-md-4 mb-2 mb-md-0">
+                                                        <label class="form-label small">End Time</label>
+                                                        <input type="time" name="workingHours[@((int)day)].EndTime" class="form-control form-control-sm" />
+                                                    </div>
+                                                    <div class="col-md-2">
+                                                        <div class="form-check form-switch">
+                                                            <input class="form-check-input day-toggle" type="checkbox" id="day-@((int)day)" />
+                                                            <label class="form-check-label small" for="day-@((int)day)">Available</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a asp-action="Trainers" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-2"></i>Create Trainer
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        $(document).ready(function() {
+            // Toggle working hours inputs based on checkbox
+            $('.day-toggle').on('change', function() {
+                var dayCard = $(this).closest('.working-hours-day');
+                var inputs = dayCard.find('input[type="time"]');
+                
+                if ($(this).is(':checked')) {
+                    inputs.prop('disabled', false).prop('required', true);
+                    dayCard.removeClass('opacity-50');
+                } else {
+                    inputs.prop('disabled', true).prop('required', false).val('');
+                    dayCard.addClass('opacity-50');
+                }
+            });
+            
+            // Initialize - disable all by default
+            $('.day-toggle').trigger('change');
+        });
+    </script>
+}
